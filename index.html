@@ -2148,8 +2148,8 @@
                         <p class="text-[11px] text-slate-500 mt-0.5">Sistem Komersialisasi & Lisensi Berlangganan Berbasis Perangkat Tunggal (Single-Device Access)</p>
                     </div>
                 </div>
-                <button type="button" id="closeLicenseModalBtn" onclick="closeLicenseModal()" class="text-slate-400 hover:text-slate-700 p-2 rounded-xl hover:bg-slate-100 transition cursor-pointer" title="Tutup Modal">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+                <button type="button" id="closeLicenseModalBtn" onclick="closeLicenseModal()" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 text-white flex items-center justify-center transition shadow-md shadow-red-500/30 cursor-pointer shrink-0" title="Tutup Pop-up Registrasi Paket & Lisensi">
+                    <i class="fa-solid fa-xmark text-xs sm:text-sm font-extrabold"></i>
                 </button>
             </div>
 
@@ -2386,21 +2386,22 @@
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div>
-                <h3 class="text-lg font-extrabold text-slate-900">Akun Owner ini sedang digunakan</h3>
-                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
-                    Sistem mendeteksi akun Owner ini sedang aktif di perangkat lain. FortaPOS menerapkan kebijakan akses perangkat tunggal (Single-Device Access) demi keamanan data kasir Anda.
+                <h3 class="text-lg font-extrabold text-slate-900" id="deviceLockoutTitle">Sesi Aktif di Perangkat Lain</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed" id="deviceLockoutDesc">
+                    Kredensial login Anda valid. Namun, akun ini sedang aktif di perangkat lain. FortaPOS menerapkan kebijakan akses perangkat tunggal (Single-Device Access) untuk paket Basic.
                 </p>
             </div>
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 font-mono">
-                ID Perangkat Ini: <span id="currentDeviceIdText" class="font-bold text-slate-700">...</span>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 font-mono space-y-1">
+                <div>ID Perangkat Ini: <span id="currentDeviceIdText" class="font-bold text-slate-700">...</span></div>
+                <div id="activeDeviceCollisionText" class="text-amber-700 font-semibold hidden">Perangkat Aktif Lain: <span id="otherDeviceIdText">...</span></div>
             </div>
             <div class="space-y-2 pt-2">
-                <button type="button" onclick="takeoverDeviceSession()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
+                <button type="button" onclick="takeoverDeviceSession()" id="btnTakeoverSession" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i>
-                    <span>Putuskan Perangkat Lain & Gunakan di Sini</span>
+                    <span>Putuskan Perangkat Lain & Gunakan di Sini (Takeover)</span>
                 </button>
-                <button type="button" onclick="logoutApp()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer">
-                    Log Out
+                <button type="button" onclick="cancelCollisionSession()" id="btnCancelSessionCollision" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer">
+                    Batal / Kembali ke Login
                 </button>
             </div>
         </div>
@@ -2880,27 +2881,22 @@
             updateLicenseModalCol1UI();
             selectPackageForPurchase(selectedPurchasePackage || 'basic');
 
+            // Tombol silang kecil merah selalu dipastikan aktif dan terlihat
             const closeBtn = document.getElementById('closeLicenseModalBtn');
             if (closeBtn) {
-                if (!isLicenseActive()) {
-                    closeBtn.classList.add('hidden');
-                } else {
-                    closeBtn.classList.remove('hidden');
-                }
+                closeBtn.classList.remove('hidden');
             }
 
             modal.classList.remove('hidden');
         }
 
         function closeLicenseModal() {
-            if (!isLicenseActive() && currentUser && currentUser.role === 'owner') {
-                showToast('Toko wajib mengaktifkan lisensi atau mulai masa percobaan sebelum membuka kasir!', 'error');
-                return;
-            }
             const modal = document.getElementById('licenseModal');
             if (modal) modal.classList.add('hidden');
             isNewOwnerRegistrationPending = false;
         }
+
+        window.closeLicenseModal = closeLicenseModal;
 
         function updateLicenseModalCol1UI() {
             const statusPill = document.getElementById('licenseStatusPill');
@@ -3327,6 +3323,45 @@
                 initAppSession();
             }
         }
+
+        function showDeviceLockoutModal(otherDeviceId = "") {
+            const modal = document.getElementById('deviceLockoutModal');
+            if (!modal) return;
+            const myDevText = document.getElementById('currentDeviceIdText');
+            if (myDevText) myDevText.innerText = getOrCreateDeviceId();
+
+            const collEl = document.getElementById('activeDeviceCollisionText');
+            const otherText = document.getElementById('otherDeviceIdText');
+            if (otherDeviceId && otherText && collEl) {
+                otherText.innerText = otherDeviceId;
+                collEl.classList.remove('hidden');
+            } else if (collEl) {
+                collEl.classList.add('hidden');
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function hideDeviceLockoutModal() {
+            const modal = document.getElementById('deviceLockoutModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function cancelCollisionSession() {
+            hideDeviceLockoutModal();
+            // Bersihkan sesi sementara dan kembalikan ke modal login
+            localStorage.removeItem('toko_hj_nurjanah_session');
+            localStorage.removeItem('fortapos_active_device_id');
+            currentUser = null;
+            const authModal = document.getElementById('authModal');
+            if (authModal) {
+                authModal.classList.remove('hidden');
+                switchAuthTab('loginOwner');
+            }
+        }
+
+        window.showDeviceLockoutModal = showDeviceLockoutModal;
+        window.hideDeviceLockoutModal = hideDeviceLockoutModal;
+        window.cancelCollisionSession = cancelCollisionSession;
 
         async function checkAndEnforceSingleDeviceSession() {
             if (!currentUser || currentUser.role !== 'owner') return true;
@@ -4014,62 +4049,59 @@
             }
 
             let foundStore = null;
+            let accountFoundWithWrongPassword = false;
 
             // 1. Verifikasi pencocokan data input login di Firebase Firestore
             if (isFirebaseConfigured && db) {
                 try {
-                    // Coba query langsung berdasarkan email
-                    let snapshot = await db.collection('stores')
+                    // Coba cari apakah ada akun dengan email, ownerName, atau storeId yang sesuai
+                    let querySnap = await db.collection('stores')
                         .where('email', '==', email)
-                        .where('password', '==', password)
                         .get();
 
-                    if (snapshot.empty) {
-                        // Coba query berdasarkan ownerName (username)
-                        snapshot = await db.collection('stores')
+                    if (querySnap.empty) {
+                        querySnap = await db.collection('stores')
                             .where('ownerName', '==', email)
-                            .where('password', '==', password)
                             .get();
                     }
 
-                    if (snapshot.empty) {
-                        // Coba query berdasarkan storeId
-                        snapshot = await db.collection('stores')
+                    if (querySnap.empty) {
+                        querySnap = await db.collection('stores')
                             .where('storeId', '==', email.toUpperCase())
-                            .where('password', '==', password)
                             .get();
                     }
 
-                    if (snapshot.empty) {
-                        // Coba pencarian langsung jika input adalah Store ID sebagai Document ID
+                    if (querySnap.empty) {
                         try {
                             const directDoc = await db.collection('stores').doc(email.toUpperCase()).get();
-                            if (directDoc.exists && (directDoc.data().password === password)) {
-                                snapshot = {
-                                    empty: false,
-                                    docs: [directDoc]
-                                };
+                            if (directDoc.exists) {
+                                querySnap = { empty: false, docs: [directDoc] };
                             }
                         } catch (docErr) {}
                     }
 
-                    if (!snapshot.empty) {
-                        const docSnap = snapshot.docs[0];
-                        const storeData = docSnap.data();
-                        foundStore = {
-                            ...storeData,
-                            storeId: storeData.storeId || docSnap.id,
-                            ownerName: storeData.ownerName || 'Owner',
-                            storeName: storeData.storeName || dbSettings.storeName,
-                            email: storeData.email || email,
-                            address: storeData.address || '',
-                            phone: storeData.phone || '',
-                            license: storeData.license || null,
-                            currentActiveDevice: storeData.currentActiveDevice || storeData.activeDeviceId || '',
-                            activeDeviceId: storeData.activeDeviceId || storeData.currentActiveDevice || ''
-                        };
+                    if (!querySnap.empty) {
+                        // Akun ditemukan di Firestore! Cek password
+                        const matchDoc = querySnap.docs.find(d => d.data().password === password);
+                        if (matchDoc) {
+                            const storeData = matchDoc.data();
+                            foundStore = {
+                                ...storeData,
+                                storeId: storeData.storeId || matchDoc.id,
+                                ownerName: storeData.ownerName || 'Owner',
+                                storeName: storeData.storeName || dbSettings.storeName,
+                                email: storeData.email || email,
+                                address: storeData.address || '',
+                                phone: storeData.phone || '',
+                                license: storeData.license || null,
+                                currentActiveDevice: storeData.currentActiveDevice || storeData.activeDeviceId || '',
+                                activeDeviceId: storeData.activeDeviceId || storeData.currentActiveDevice || ''
+                            };
+                        } else {
+                            accountFoundWithWrongPassword = true;
+                        }
                     } else {
-                        // Verifikasi fleksibel case-insensitive pada email/ownerName/storeId dengan password presisi
+                        // Fallback pencarian case-insensitive jika query exact kosong
                         const allStores = await db.collection('stores').get();
                         allStores.forEach(doc => {
                             const data = doc.data();
@@ -4077,19 +4109,23 @@
                             const ow = (data.ownerName || '').toLowerCase();
                             const st = (data.storeId || doc.id || '').toLowerCase();
                             const target = email.toLowerCase();
-                            if ((em === target || ow === target || st === target) && data.password === password) {
-                                foundStore = {
-                                    ...data,
-                                    storeId: data.storeId || doc.id,
-                                    ownerName: data.ownerName || 'Owner',
-                                    storeName: data.storeName || dbSettings.storeName,
-                                    email: data.email || email,
-                                    address: data.address || '',
-                                    phone: data.phone || '',
-                                    license: data.license || null,
-                                    currentActiveDevice: data.currentActiveDevice || data.activeDeviceId || '',
-                                    activeDeviceId: data.activeDeviceId || data.currentActiveDevice || ''
-                                };
+                            if (em === target || ow === target || st === target) {
+                                if (data.password === password) {
+                                    foundStore = {
+                                        ...data,
+                                        storeId: data.storeId || doc.id,
+                                        ownerName: data.ownerName || 'Owner',
+                                        storeName: data.storeName || dbSettings.storeName,
+                                        email: data.email || email,
+                                        address: data.address || '',
+                                        phone: data.phone || '',
+                                        license: data.license || null,
+                                        currentActiveDevice: data.currentActiveDevice || data.activeDeviceId || '',
+                                        activeDeviceId: data.activeDeviceId || data.currentActiveDevice || ''
+                                    };
+                                } else {
+                                    accountFoundWithWrongPassword = true;
+                                }
                             }
                         });
                     }
@@ -4098,38 +4134,41 @@
                 }
             }
 
-            // 2. Verifikasi pencocokan data input login secara presisi di database localStorage jika belum ditemukan
+            // 2. Verifikasi pencocokan di database localStorage jika belum ditemukan
             if (!foundStore) {
                 let localOwners = [];
                 try {
                     const savedOwners = localStorage.getItem('toko_registered_owners');
-                    if (savedOwners) {
-                        localOwners = JSON.parse(savedOwners);
-                    }
-                } catch (e) {
-                    localOwners = [];
-                }
+                    if (savedOwners) localOwners = JSON.parse(savedOwners);
+                } catch (e) { localOwners = []; }
 
-                const matched = localOwners.find(o =>
+                const matchedLocal = localOwners.find(o =>
                     (((o.email || '').toLowerCase() === email.toLowerCase()) ||
                      ((o.ownerName || '').toLowerCase() === email.toLowerCase()) ||
-                     ((o.storeId || '').toUpperCase() === email.toUpperCase())) &&
-                    (o.password === password)
+                     ((o.storeId || '').toUpperCase() === email.toUpperCase()))
                 );
 
-                if (matched) {
-                    foundStore = matched;
+                if (matchedLocal) {
+                    if (matchedLocal.password === password) {
+                        foundStore = matchedLocal;
+                    } else {
+                        accountFoundWithWrongPassword = true;
+                    }
                 }
             }
 
-            // 3. PROTEKSI KETAT: TOLAK AKSES SECARA MUTLAK JIKA TIDAK COCOK / BELUM TERDAFTAR
+            // 3. DIFERENSIASI KREDENSIAL JELAS: Mencegah pengguna tersesat ke registrasi baru
             if (!foundStore) {
                 playBeep('error');
-                showToast('Email atau Password Owner tidak terdaftar!', 'error');
+                if (accountFoundWithWrongPassword) {
+                    showToast('Akun terdaftar ditemukan, namun Password salah! Harap periksa kembali password Anda.', 'error');
+                } else {
+                    showToast('Email / Username Owner belum terdaftar. Silakan periksa kembali atau buat akun baru.', 'error');
+                }
                 return;
             }
 
-            // Sinkronkan akun owner ke database localStorage perangkat ini (mendukung login multi-device & offline)
+            // 4. KREDENSIAL 100% VALID: Sinkronkan akun owner ke database localStorage perangkat ini
             try {
                 let localOwners = [];
                 const savedOwners = localStorage.getItem('toko_registered_owners');
@@ -4143,13 +4182,10 @@
                 localStorage.setItem('toko_registered_owners', JSON.stringify(localOwners));
             } catch (e) {}
 
-            // 4. JIKA DATA COCOK & TERDAFTAR, BERIKAN HAK AKSES OWNER
             const storeId = foundStore.storeId || 'HJN-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const ownerName = foundStore.ownerName || 'Owner';
 
-            if (foundStore.storeName) {
-                dbSettings.storeName = foundStore.storeName;
-            }
+            if (foundStore.storeName) dbSettings.storeName = foundStore.storeName;
             if (foundStore.address) dbSettings.address = foundStore.address;
             if (foundStore.phone) dbSettings.phone = foundStore.phone;
             localStorage.setItem('toko_hj_nurjanah_db_settings', JSON.stringify(dbSettings));
@@ -4162,7 +4198,6 @@
             };
             currentStoreId = storeId;
             localStorage.setItem('toko_hj_nurjanah_session', JSON.stringify(currentUser));
-            document.getElementById('authModal').classList.add('hidden');
 
             // Muat data lisensi toko dari database jika tersimpan
             if (foundStore.license) {
@@ -4172,13 +4207,13 @@
                 applyLicenseRestrictions();
             }
 
-            // Validasi Single-Device Access (1 Akun Owner = 1 Device pada Basic, Multi-Device pada Premium)
+            // 5. MANAJEMEN SESI MULTI-DEVICE & SESSION COLLISION HANDLING
             const myDeviceId = getOrCreateDeviceId();
             const activeDev = (foundStore.currentActiveDevice || foundStore.activeDeviceId || "").trim();
             const isPremium = currentLicense && currentLicense.packageType === 'premium';
 
-            // Jika device sebelumnya sudah log out (activeDev kosong/reset), atau perangkat yang sama, atau lisensi Premium:
-            // Izinkan perangkat baru masuk langsung dan perbarui active device di Firestore & localStorage
+            // Verifikasi status perangkat aktif:
+            // a) Jika field perangkat kosong/reset (perangkat sebelumnya sudah logout), atau perangkat yang sama, atau lisensi Premium:
             if (!activeDev || activeDev === myDeviceId || isPremium) {
                 if (isFirebaseConfigured && db && storeId) {
                     try {
@@ -4193,23 +4228,29 @@
                 }
                 localStorage.setItem('fortapos_active_device_id', myDeviceId);
                 hideDeviceLockoutModal();
-            } else {
-                // Perangkat lain masih aktif pada paket Basic
-                showToast('Akun sedang aktif di perangkat lain. Silakan putuskan perangkat sebelumnya atau gunakan fitur Takeover.', 'warning');
-                showDeviceLockoutModal();
-                return;
-            }
+                document.getElementById('authModal').classList.add('hidden');
 
-            showToast('Login Owner berhasil! Selamat datang, ' + ownerName, 'success');
-            logActivity('Autentikasi', 'Owner ' + ownerName + ' berhasil login.');
+                showToast('Login Owner berhasil! Selamat datang, ' + ownerName, 'success');
+                logActivity('Autentikasi', 'Owner ' + ownerName + ' berhasil login.');
 
-            // Validasi Lisensi Berlangganan
-            if (!isLicenseActive()) {
-                openLicenseModal();
+                // Validasi Lisensi Berlangganan: Jika lisensi aktif, langsung buka kasir tanpa loop registrasi
+                if (!isLicenseActive()) {
+                    openLicenseModal();
+                } else {
+                    initAppSession();
+                }
             } else {
-                initAppSession();
+                // b) KREDENSIAL VALID TAPI TERJADI SESSION COLLISION:
+                // Akun sedang aktif di perangkat lain pada paket Basic.
+                // UI segera menyediakan aksi remediasi jelas (Takeover option).
+                playBeep('warning');
+                document.getElementById('authModal').classList.add('hidden');
+                showToast('Kredensial valid. Sesi sedang aktif di perangkat lain. Silakan pilih opsi Takeover.', 'warning');
+                showDeviceLockoutModal(activeDev);
             }
         }
+        
+        
         
         
 
@@ -4373,24 +4414,26 @@
         }
 
         async function logoutApp() {
-            // Kosongkan status active device di Firestore agar Owner bisa pindah perangkat dengan aman
+            // 1. Kosongkan status active device di Firestore sebelum sign out agar akun terbebas untuk perangkat lain
             if (currentUser && currentUser.role === 'owner' && currentStoreId) {
-                if (db) {
+                const myDeviceId = getOrCreateDeviceId();
+                const wasActiveHere = localStorage.getItem('fortapos_active_device_id') === myDeviceId;
+                if (db && wasActiveHere) {
                     try {
                         await db.collection('stores').doc(currentStoreId).update({
                             currentActiveDevice: "",
                             activeDeviceId: "",
                             activeDeviceLastSeen: null
                         });
-                        console.log("Device aktif berhasil di-reset di Firestore saat logout.");
+                        console.log("Device aktif berhasil di-reset di Firestore sebelum sign out.");
                     } catch (e) {
                         console.warn("Gagal mengosongkan status device saat logout:", e);
                     }
                 }
-                // Bersihkan juga cache active device lokal
                 localStorage.removeItem('fortapos_active_device_id');
             }
 
+            // 2. Jika karyawan, update status offline
             if (currentUser && currentUser.role === 'employee' && currentUser.employeeDocId) {
                 if (db) {
                     try {
@@ -4410,12 +4453,27 @@
                 }
             }
 
+            // 3. Putuskan listeners realtime & bersihkan session
             unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
             unsubscribers = [];
             localStorage.removeItem('toko_hj_nurjanah_session');
             currentUser = null;
             location.reload();
         }
+
+        async function handleLogOut() {
+            return await logoutApp();
+        }
+
+        async function handleLogin(e) {
+            return await handleLoginOwner(e);
+        }
+
+        window.handleLogOut = handleLogOut;
+        window.handleLogin = handleLogin;
+        window.logoutApp = logoutApp;
+        
+        
         
         
 
