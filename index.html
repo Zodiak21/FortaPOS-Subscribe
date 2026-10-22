@@ -21,18 +21,6 @@
                     enumerable: true
                 });
             } catch (e) {}
-
-            try {
-                const origError = console.error;
-                console.error = function(...args) {
-                    const str = args.map(a => typeof a === 'object' ? (a && a.message ? a.message : JSON.stringify(a)) : String(a)).join(' ');
-                    if (str.includes('fortapos-subscribe') || str.includes('Could not reach Cloud Firestore') || str.includes('permission-denied') || str.includes('@firebase/firestore')) {
-                        console.warn("[FortaPOS Mode Lokal / Offline]", str);
-                        return;
-                    }
-                    origError.apply(console, args);
-                };
-            } catch (e) {}
         })();
     </script>
 
@@ -2414,22 +2402,16 @@
         // Kredensial preset terkunci permanen - otomatis terhubung
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyCXCknN1DXHhLu8wDkIRnO9NazEe4vBq6c",
-  authDomain: "fortapos-subscribe-3c853.firebaseapp.com",
-  projectId: "fortapos-subscribe-3c853",
-  storageBucket: "fortapos-subscribe-3c853.firebasestorage.app",
-  messagingSenderId: "253556656273",
-  appId: "1:253556656273:web:4966b56dad1277c0015730"
+            apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
+  authDomain: "fortaappsubscribe.firebaseapp.com",
+  projectId: "fortaappsubscribe",
+  storageBucket: "fortaappsubscribe.firebasestorage.app",
+  messagingSenderId: "935859426439",
+  appId: "1:935859426439:web:e5c43eed974f1606e61422"
         };
 
         let isFirebaseConfigured = false;
         let db = null;
-
-        try {
-            if (typeof firebase !== 'undefined' && firebase.firestore) {
-                firebase.firestore.setLogLevel('silent');
-            }
-        } catch (e) {}
 
         try {
             if (firebaseConfig.apiKey && 
@@ -2441,14 +2423,10 @@
                     firebase.initializeApp(firebaseConfig);
                 }
                 db = firebase.firestore();
-                // Matikan koneksi jaringan remote secara proaktif karena database fortapos-subscribe tidak aktif / menolak izin
-                if (db && typeof db.disableNetwork === 'function') {
-                    db.disableNetwork().catch(() => {});
-                }
-                isFirebaseConfigured = false; // Menggunakan Mode Lokal (LocalStorage) yang stabil
+                isFirebaseConfigured = true;
             }
         } catch (err) {
-            console.warn("Inisialisasi Firebase beralih ke mode lokal fallback:", err);
+            console.warn("Inisialisasi Firebase gagal, menggunakan mode lokal fallback:", err);
             isFirebaseConfigured = false;
         }
 
@@ -2818,64 +2796,6 @@
         // ==============================================================
         // SISTEM LISENSI BERLANGGANAN (SAAS) & SINGLE-DEVICE FUNCTIONS
         // ==============================================================
-        // ==========================================
-        // FIRESTORE GRACEFUL ERROR HANDLING & OFFLINE FALLBACK
-        // ==========================================
-        function handleFirestoreError(err) {
-            if (!err) return;
-            const errMsg = (err.message || '').toLowerCase();
-            const errCode = (err.code || '').toLowerCase();
-            const isPermissionOrNetwork = errCode === 'permission-denied' || 
-                                          errCode === 'unavailable' ||
-                                          errCode === 'failed-precondition' ||
-                                          errMsg.includes('permission-denied') || 
-                                          errMsg.includes('could not reach cloud firestore') ||
-                                          errMsg.includes('offline');
-
-            if (isPermissionOrNetwork) {
-                console.warn("Akses Cloud Firestore tidak tersedia / izin ditolak (" + (err.code || "permission-denied") + "). Berpindah ke Mode Offline / Lokal (LocalStorage).");
-                if (isFirebaseConfigured) {
-                    isFirebaseConfigured = false;
-                    if (db && typeof db.disableNetwork === 'function') {
-                        try { db.disableNetwork().catch(() => {}); } catch(e) {}
-                    }
-                    unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
-                    unsubscribers = [];
-                    updateFirebaseStatusUI();
-                    if (currentUser) {
-                        initLocalStorageData();
-                        loadSettingsToUI();
-                        renderStockTable();
-                        renderCategories();
-                        renderUnits();
-                        renderCustomers();
-                        updateCustomerFilterDropdown();
-                        updateStockCategoryFilterDropdown();
-                        renderEmployees();
-                        renderHistory();
-                        renderActivityLogs();
-                        updateChart();
-                    }
-                }
-            } else {
-                console.warn("Firestore error:", err);
-            }
-        }
-
-        async function checkFirestoreAvailability() {
-            if (!isFirebaseConfigured || !db) return;
-            try {
-                // Uji akses baca Firestore secara singkat dengan timeout 2.5 detik
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Firestore connection timeout')), 2500)
-                );
-                const checkPromise = db.collection('licenses').limit(1).get();
-                await Promise.race([checkPromise, timeoutPromise]);
-            } catch (err) {
-                handleFirestoreError(err);
-            }
-        }
-
         async function seedLicensesIfEmpty() {
             if (!isFirebaseConfigured || !db) return;
             try {
@@ -2895,7 +2815,7 @@
                 await batch.commit();
                 console.log("Firebase Firestore: Koleksi /licenses disinkronkan dengan kode uji coba 3 hari.");
             } catch (e) {
-                handleFirestoreError(e);
+                console.warn("Auto-seed koleksi /licenses di Firestore dilewati:", e);
             }
         }
 
@@ -3489,11 +3409,10 @@
         // ==========================================
         // INITIALIZATION
         // ==========================================
-        window.onload = async function() {
+        window.onload = function() {
             initTheme();
             initLocalStorageData();
-            
-            updateFirebaseStatusUI();
+            seedLicensesIfEmpty();
 
             if (!isFirebaseConfigured) {
                 const banner = document.getElementById('demoModeBanner');
@@ -4437,153 +4356,129 @@
             }
 
             if (isFirebaseConfigured && db) {
-                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(
-                    doc => {
-                        if (doc.exists) {
-                            const data = doc.data();
-                            dbSettings = { ...dbSettings, ...data };
-                            
-                            // Sinkronisasi lisensi dari Firestore
-                            if (data.license) {
-                                currentLicense = data.license;
-                                localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
-                                updateLicenseModalCol1UI();
-                                applyLicenseRestrictions();
-                            }
-
-                            // Monitor Single-Device Access secara real-time
-                            if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
-                                const activeId = data.activeDeviceId;
-                                const myDevId = getOrCreateDeviceId();
-                                if (activeId && activeId !== myDevId) {
-                                    showDeviceLockoutModal();
-                                } else {
-                                    hideDeviceLockoutModal();
-                                }
-                            }
-
-                            loadSettingsToUI();
-                            updateStockAlertBadges();
-                            renderStockTable();
+                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        dbSettings = { ...dbSettings, ...data };
+                        
+                        // Sinkronisasi lisensi dari Firestore
+                        if (data.license) {
+                            currentLicense = data.license;
+                            localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                            updateLicenseModalCol1UI();
+                            applyLicenseRestrictions();
                         }
-                    },
-                    err => handleFirestoreError(err)
-                );
+
+                        // Monitor Single-Device Access secara real-time
+                        if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
+                            const activeId = data.activeDeviceId;
+                            const myDevId = getOrCreateDeviceId();
+                            if (activeId && activeId !== myDevId) {
+                                showDeviceLockoutModal();
+                            } else {
+                                hideDeviceLockoutModal();
+                            }
+                        }
+
+                        loadSettingsToUI();
+                        updateStockAlertBadges();
+                        renderStockTable();
+                    }
+                });
                 unsubscribers.push(unsubStore);
 
-                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(
-                    snapshot => {
-                        dbProducts = [];
-                        snapshot.forEach(doc => {
-                            dbProducts.push({ firestoreId: doc.id, ...doc.data() });
-                        });
-                        if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                            const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
-                            if (savedProducts) {
-                                try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
-                            }
-                            if (dbProducts.length === 0) {
-                                dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
-                            }
+                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(snapshot => {
+                    dbProducts = [];
+                    snapshot.forEach(doc => {
+                        dbProducts.push({ firestoreId: doc.id, ...doc.data() });
+                    });
+                    if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                        const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
+                        if (savedProducts) {
+                            try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
                         }
-                        renderStockTable();
-                        renderCart();
-                        updateStockCategoryFilterDropdown();
-                        updateStockAlertBadges();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                        if (dbProducts.length === 0) {
+                            dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
+                        }
+                    }
+                    renderStockTable();
+                    renderCart();
+                    updateStockCategoryFilterDropdown();
+                    updateStockAlertBadges();
+                });
                 unsubscribers.push(unsubProd);
 
-                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(
-                    doc => {
-                        if (doc.exists && doc.data().list) {
-                            dbCategories = doc.data().list;
-                        }
-                        renderCategories();
-                        updateStockCategoryFilterDropdown();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(doc => {
+                    if (doc.exists && doc.data().list) {
+                        dbCategories = doc.data().list;
+                    }
+                    renderCategories();
+                    updateStockCategoryFilterDropdown();
+                });
                 unsubscribers.push(unsubCat);
 
-                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(
-                    doc => {
-                        if (doc.exists && doc.data().list) {
-                            dbUnits = doc.data().list;
-                            renderUnits();
-                        }
-                    },
-                    err => handleFirestoreError(err)
-                );
+                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(doc => {
+                    if (doc.exists && doc.data().list) {
+                        dbUnits = doc.data().list;
+                        renderUnits();
+                    }
+                });
                 unsubscribers.push(unsubUnit);
 
-                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(
-                    snapshot => {
-                        dbCustomers = [];
-                        snapshot.forEach(doc => {
-                            dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
-                        });
-                        if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                            dbCustomers = [
-                                { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
-                                { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
-                                { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
-                            ];
-                        }
-                        renderCustomers();
-                        updateCustomerFilterDropdown();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(snapshot => {
+                    dbCustomers = [];
+                    snapshot.forEach(doc => {
+                        dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
+                    });
+                    if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                        dbCustomers = [
+                            { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
+                            { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
+                            { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
+                        ];
+                    }
+                    renderCustomers();
+                    updateCustomerFilterDropdown();
+                });
                 unsubscribers.push(unsubCust);
 
-                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(
-                    snapshot => {
-                        dbTransactions = [];
-                        snapshot.forEach(doc => {
-                            dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
-                        });
-                        if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                            const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
-                            if (savedTrx) {
-                                try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
-                            }
+                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(snapshot => {
+                    dbTransactions = [];
+                    snapshot.forEach(doc => {
+                        dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
+                    });
+                    if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                        const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
+                        if (savedTrx) {
+                            try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
                         }
-                        dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                        updateCustomerFilterDropdown();
-                        updateEmployeeFilterDropdown();
-                        renderHistory();
-                        updateChart();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                    }
+                    dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    updateCustomerFilterDropdown();
+                    updateEmployeeFilterDropdown();
+                    renderHistory();
+                    updateChart();
+                });
                 unsubscribers.push(unsubTrx);
 
-                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(
-                    snapshot => {
-                        dbEmployees = [];
-                        snapshot.forEach(doc => {
-                            dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
-                        });
-                        renderEmployees();
-                        updateEmployeeFilterDropdown();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(snapshot => {
+                    dbEmployees = [];
+                    snapshot.forEach(doc => {
+                        dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
+                    });
+                    renderEmployees();
+                    updateEmployeeFilterDropdown();
+                });
                 unsubscribers.push(unsubEmp);
 
-                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(
-                    snapshot => {
-                        dbActivityLogs = [];
-                        snapshot.forEach(doc => {
-                            dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
-                        });
-                        dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                        renderActivityLogs();
-                    },
-                    err => handleFirestoreError(err)
-                );
+                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(snapshot => {
+                    dbActivityLogs = [];
+                    snapshot.forEach(doc => {
+                        dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
+                    });
+                    dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    renderActivityLogs();
+                });
                 unsubscribers.push(unsubLogs);
             } else {
                 loadSettingsToUI();
