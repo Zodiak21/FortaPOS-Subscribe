@@ -3719,6 +3719,18 @@
             location.reload();
         }
 
+        async function handleLogOut() {
+            return await logoutApp();
+        }
+
+        async function handleLogin(e) {
+            return await handleLoginOwner(e);
+        }
+
+        window.handleLogOut = handleLogOut;
+        window.handleLogin = handleLogin;
+        window.logoutApp = logoutApp;
+
         function initLocalStorageData() {
             if (currentUser && currentUser.isDemo) {
                 let demoProds = [];
@@ -3897,9 +3909,21 @@
             // Cek apakah email/username sudah terdaftar di Firebase Firestore
             if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                 try {
-                    const snapCheck = await db.collection('stores').where('email', '==', email).get();
+                    let snapCheck = await db.collection('stores').where('email', '==', email).get();
+                    if (snapCheck.empty) {
+                        snapCheck = await db.collection('stores').where('ownerName', '==', email).get();
+                    }
+                    if (snapCheck.empty) {
+                        const allStores = await db.collection('stores').get();
+                        allStores.forEach(d => {
+                            const dData = d.data();
+                            if ((dData.email || '').toLowerCase() === email.toLowerCase() || (dData.ownerName || '').toLowerCase() === ownerName.toLowerCase()) {
+                                snapCheck = { empty: false };
+                            }
+                        });
+                    }
                     if (!snapCheck.empty) {
-                        showToast('Email / Username Owner sudah terdaftar di Cloud! Silakan login.', 'error');
+                        showToast('Email / Username Owner sudah terdaftar di Cloud! Mengalihkan ke menu Login...', 'info');
                         switchAuthTab('loginOwner');
                         const loginEmailInput = document.getElementById('ownerLoginEmail');
                         if (loginEmailInput) loginEmailInput.value = email;
@@ -4014,6 +4038,19 @@
                             .where('storeId', '==', email.toUpperCase())
                             .where('password', '==', password)
                             .get();
+                    }
+
+                    if (snapshot.empty) {
+                        // Coba pencarian langsung jika input adalah Store ID sebagai Document ID
+                        try {
+                            const directDoc = await db.collection('stores').doc(email.toUpperCase()).get();
+                            if (directDoc.exists && (directDoc.data().password === password)) {
+                                snapshot = {
+                                    empty: false,
+                                    docs: [directDoc]
+                                };
+                            }
+                        } catch (docErr) {}
                     }
 
                     if (!snapshot.empty) {
