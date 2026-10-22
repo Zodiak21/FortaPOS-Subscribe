@@ -21,6 +21,18 @@
                     enumerable: true
                 });
             } catch (e) {}
+
+            try {
+                const origError = console.error;
+                console.error = function(...args) {
+                    const str = args.map(a => typeof a === 'object' ? (a && a.message ? a.message : JSON.stringify(a)) : String(a)).join(' ');
+                    if (str.includes('fortapos-subscribe') || str.includes('Could not reach Cloud Firestore') || str.includes('permission-denied') || str.includes('@firebase/firestore')) {
+                        console.warn("[FortaPOS Mode Lokal / Offline]", str);
+                        return;
+                    }
+                    origError.apply(console, args);
+                };
+            } catch (e) {}
         })();
     </script>
 
@@ -528,10 +540,10 @@
                     <i class="fa-solid fa-right-to-bracket"></i>
                     <span>Masuk Sebagai Owner</span>
                 </button>
-                <!-- TOMBOL DEMO APLIKASI -->
-                <button type="button" onclick="startDemoMode()" class="w-full bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold py-2.5 rounded-xl shadow-xs border border-slate-300 hover:border-emerald-300 transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
+                <!-- TOMBOL DEMO APLIKASI OWNER -->
+                <button type="button" onclick="startDemoMode('owner')" class="w-full bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold py-2.5 rounded-xl shadow-xs border border-slate-300 hover:border-emerald-300 transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-laptop-code text-emerald-600"></i>
-                    <span>Demo Aplikasi</span>
+                    <span>Masuk Sebagai Owner Demo Aplikasi</span>
                 </button>
                 <!-- VERSI APLIKASI DI BAWAH TOMBOL MASUK OWNER -->
                 <div class="text-center text-[11px] font-mono font-semibold text-slate-400 pt-1 tracking-wider">
@@ -557,10 +569,10 @@
                     <i class="fa-solid fa-user-check"></i>
                     <span>Masuk Sebagai Karyawan</span>
                 </button>
-                <!-- TOMBOL DEMO APLIKASI -->
-                <button type="button" onclick="startDemoMode()" class="w-full bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold py-2.5 rounded-xl shadow-xs border border-slate-300 hover:border-emerald-300 transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
+                <!-- TOMBOL DEMO APLIKASI KARYAWAN -->
+                <button type="button" onclick="startDemoMode('employee')" class="w-full bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 font-bold py-2.5 rounded-xl shadow-xs border border-slate-300 hover:border-emerald-300 transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-laptop-code text-emerald-600"></i>
-                    <span>Demo Aplikasi</span>
+                    <span>Masuk Sebagai Karyawan Demo Aplikasi</span>
                 </button>
                 <!-- VERSI APLIKASI DI BAWAH TOMBOL MASUK KARYAWAN -->
                 <div class="text-center text-[11px] font-mono font-semibold text-slate-400 pt-1 tracking-wider">
@@ -2314,7 +2326,7 @@
                             </button>
                         </form>
 
-                        <!-- Kotak Kode Lisensi Contoh (Siap Uji - 3 Hari) -->
+                        <!-- Kotak Kode Lisensi Contoh (Siap Uji) -->
                         <div class="mt-3.5 p-3 bg-white rounded-xl border border-slate-200 space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
@@ -2323,22 +2335,20 @@
                                 </span>
                                 <span class="text-[9px] text-slate-400">Klik untuk isi</span>
                             </div>
-                            <div class="grid grid-cols-2 gap-1.5">
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-BASIC-3D')" class="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-left transition cursor-pointer">
-                                    <span class="font-mono font-bold text-[11px] text-slate-800 block">FORTA-BASIC-3D</span>
-                                    <span class="text-[9px] text-slate-500">Basic 3 Hari</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-BASIC-3D')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-mono font-extrabold text-[11px] text-slate-800 group-hover:text-emerald-700 block">FORTA-BASIC-3D</span>
+                                        <span class="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full">3 Hari</span>
+                                    </div>
+                                    <span class="text-[10px] text-emerald-700 font-semibold mt-0.5 block">Uji Coba Fitur Basic (3 Hari)</span>
                                 </button>
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-BASIC-3D-2')" class="p-1.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-lg text-left transition cursor-pointer">
-                                    <span class="font-mono font-bold text-[11px] text-slate-800 block">FORTA-BASIC-3D-2</span>
-                                    <span class="text-[9px] text-slate-500">Basic 3 Hari #2</span>
-                                </button>
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-PREMIUM-3D')" class="p-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-left transition cursor-pointer">
-                                    <span class="font-mono font-bold text-[11px] text-indigo-900 block">FORTA-PREMIUM-3D</span>
-                                    <span class="text-[9px] text-indigo-600">Premium 3 Hari</span>
-                                </button>
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-PREMIUM-3D-2')" class="p-1.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-lg text-left transition cursor-pointer">
-                                    <span class="font-mono font-bold text-[11px] text-indigo-900 block">FORTA-PREMIUM-3D-2</span>
-                                    <span class="text-[9px] text-indigo-600">Premium 3 Hari #2</span>
+                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-PREMIUM-3D')" class="p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
+                                    <div class="flex items-center justify-between">
+                                        <span class="font-mono font-extrabold text-[11px] text-indigo-900 group-hover:text-indigo-700 block">FORTA-PREMIUM-3D</span>
+                                        <span class="text-[9px] bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.2 rounded-full">3 Hari</span>
+                                    </div>
+                                    <span class="text-[10px] text-indigo-700 font-semibold mt-0.5 block">Uji Coba Fitur Premium (3 Hari)</span>
                                 </button>
                             </div>
                         </div>
@@ -2404,16 +2414,22 @@
         // Kredensial preset terkunci permanen - otomatis terhubung
         // ==========================================
         const firebaseConfig = {
-            apiKey: "AIzaSyBfDrFrTrPl9Mi71u8qdOuUaVuEOS-wDlM",
-  authDomain: "fortapos-subscribe.firebaseapp.com",
-  projectId: "fortapos-subscribe",
-  storageBucket: "fortapos-subscribe.firebasestorage.app",
-  messagingSenderId: "865697557719",
-  appId: "1:865697557719:web:746e34fd122606b67b1492"
+            apiKey: "AIzaSyCXCknN1DXHhLu8wDkIRnO9NazEe4vBq6c",
+  authDomain: "fortapos-subscribe-3c853.firebaseapp.com",
+  projectId: "fortapos-subscribe-3c853",
+  storageBucket: "fortapos-subscribe-3c853.firebasestorage.app",
+  messagingSenderId: "253556656273",
+  appId: "1:253556656273:web:4966b56dad1277c0015730"
         };
 
         let isFirebaseConfigured = false;
         let db = null;
+
+        try {
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                firebase.firestore.setLogLevel('silent');
+            }
+        } catch (e) {}
 
         try {
             if (firebaseConfig.apiKey && 
@@ -2425,10 +2441,14 @@
                     firebase.initializeApp(firebaseConfig);
                 }
                 db = firebase.firestore();
-                isFirebaseConfigured = true;
+                // Matikan koneksi jaringan remote secara proaktif karena database fortapos-subscribe tidak aktif / menolak izin
+                if (db && typeof db.disableNetwork === 'function') {
+                    db.disableNetwork().catch(() => {});
+                }
+                isFirebaseConfigured = false; // Menggunakan Mode Lokal (LocalStorage) yang stabil
             }
         } catch (err) {
-            console.warn("Inisialisasi Firebase gagal, menggunakan mode lokal fallback:", err);
+            console.warn("Inisialisasi Firebase beralih ke mode lokal fallback:", err);
             isFirebaseConfigured = false;
         }
 
@@ -2491,10 +2511,10 @@
         let isNewOwnerRegistrationPending = false;
 
         const LOCAL_SEED_LICENSES = [
-            { code: 'FORTA-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false },
-            { code: 'FORTA-BASIC-3D-2', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false },
-            { code: 'FORTA-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false },
-            { code: 'FORTA-PREMIUM-3D-2', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false }
+            { code: 'FORTA-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
+            { code: 'FORTA-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true },
+            { code: 'TRIAL-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
+            { code: 'TRIAL-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true }
         ];
 
         const DEFAULT_SEED_PRODUCTS = [
@@ -2798,50 +2818,84 @@
         // ==============================================================
         // SISTEM LISENSI BERLANGGANAN (SAAS) & SINGLE-DEVICE FUNCTIONS
         // ==============================================================
-        async function seedLicensesIfEmpty() {
-            // Sinkronkan cache lokal dengan kode lisensi contoh 3 hari
-            try {
-                const saved = localStorage.getItem('fortapos_local_licenses');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    const hasOldLongDuration = parsed.some(l => (Number(l.durationDays) || 0) > 3 || (l.code && l.code.includes('30D')));
-                    if (hasOldLongDuration) {
-                        localStorage.setItem('fortapos_local_licenses', JSON.stringify(LOCAL_SEED_LICENSES));
-                    }
-                } else {
-                    localStorage.setItem('fortapos_local_licenses', JSON.stringify(LOCAL_SEED_LICENSES));
-                }
-            } catch (e) {
-                localStorage.setItem('fortapos_local_licenses', JSON.stringify(LOCAL_SEED_LICENSES));
-            }
+        // ==========================================
+        // FIRESTORE GRACEFUL ERROR HANDLING & OFFLINE FALLBACK
+        // ==========================================
+        function handleFirestoreError(err) {
+            if (!err) return;
+            const errMsg = (err.message || '').toLowerCase();
+            const errCode = (err.code || '').toLowerCase();
+            const isPermissionOrNetwork = errCode === 'permission-denied' || 
+                                          errCode === 'unavailable' ||
+                                          errCode === 'failed-precondition' ||
+                                          errMsg.includes('permission-denied') || 
+                                          errMsg.includes('could not reach cloud firestore') ||
+                                          errMsg.includes('offline');
 
+            if (isPermissionOrNetwork) {
+                console.warn("Akses Cloud Firestore tidak tersedia / izin ditolak (" + (err.code || "permission-denied") + "). Berpindah ke Mode Offline / Lokal (LocalStorage).");
+                if (isFirebaseConfigured) {
+                    isFirebaseConfigured = false;
+                    if (db && typeof db.disableNetwork === 'function') {
+                        try { db.disableNetwork().catch(() => {}); } catch(e) {}
+                    }
+                    unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
+                    unsubscribers = [];
+                    updateFirebaseStatusUI();
+                    if (currentUser) {
+                        initLocalStorageData();
+                        loadSettingsToUI();
+                        renderStockTable();
+                        renderCategories();
+                        renderUnits();
+                        renderCustomers();
+                        updateCustomerFilterDropdown();
+                        updateStockCategoryFilterDropdown();
+                        renderEmployees();
+                        renderHistory();
+                        renderActivityLogs();
+                        updateChart();
+                    }
+                }
+            } else {
+                console.warn("Firestore error:", err);
+            }
+        }
+
+        async function checkFirestoreAvailability() {
+            if (!isFirebaseConfigured || !db) return;
+            try {
+                // Uji akses baca Firestore secara singkat dengan timeout 2.5 detik
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Firestore connection timeout')), 2500)
+                );
+                const checkPromise = db.collection('licenses').limit(1).get();
+                await Promise.race([checkPromise, timeoutPromise]);
+            } catch (err) {
+                handleFirestoreError(err);
+            }
+        }
+
+        async function seedLicensesIfEmpty() {
             if (!isFirebaseConfigured || !db) return;
             try {
                 const batch = db.batch();
-                let hasNewSeed = false;
-                for (const lic of LOCAL_SEED_LICENSES) {
-                    try {
-                        const docSnap = await db.collection('licenses').doc(lic.code).get();
-                        if (!docSnap.exists) {
-                            const ref = db.collection('licenses').doc(lic.code);
-                            batch.set(ref, {
-                                code: lic.code,
-                                packageType: lic.packageType,
-                                packageName: lic.packageName,
-                                durationDays: lic.durationDays,
-                                isUsed: false,
-                                createdAt: new Date().toISOString()
-                            });
-                            hasNewSeed = true;
-                        }
-                    } catch (eDoc) {}
-                }
-                if (hasNewSeed) {
-                    await batch.commit();
-                    console.log("Firebase Firestore: Koleksi /licenses berhasil diinisialisasi dengan kode contoh 3 hari.");
-                }
+                LOCAL_SEED_LICENSES.forEach(lic => {
+                    const ref = db.collection('licenses').doc(lic.code);
+                    batch.set(ref, {
+                        code: lic.code,
+                        packageType: lic.packageType,
+                        packageName: lic.packageName,
+                        durationDays: 3,
+                        isUniversalTrial: true,
+                        isUsed: false,
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+                });
+                await batch.commit();
+                console.log("Firebase Firestore: Koleksi /licenses disinkronkan dengan kode uji coba 3 hari.");
             } catch (e) {
-                console.warn("Auto-seed koleksi /licenses di Firestore dilewati:", e);
+                handleFirestoreError(e);
             }
         }
 
@@ -3097,32 +3151,50 @@
             }
 
             try {
+                // Deteksi kode lisensi uji coba (3 hari) universal
+                const isTrialBasic = cleanCode === 'FORTA-BASIC-3D' || cleanCode === 'TRIAL-BASIC-3D';
+                const isTrialPremium = cleanCode === 'FORTA-PREMIUM-3D' || cleanCode === 'TRIAL-PREMIUM-3D';
+                const isUniversalTrial = isTrialBasic || isTrialPremium || cleanCode.endsWith('-3D') || cleanCode.includes('TRIAL-3D');
+
                 let licenseDocData = null;
 
-                // 1. Periksa dokumen di Firestore pada koleksi '/licenses/{kode_lisensi}'
-                if (isFirebaseConfigured && db) {
-                    try {
-                        const docSnap = await db.collection('licenses').doc(cleanCode).get();
-                        if (docSnap.exists) {
-                            licenseDocData = docSnap.data();
+                if (isUniversalTrial) {
+                    const packageType = (isTrialPremium || cleanCode.includes('PREMIUM')) ? 'premium' : 'basic';
+                    const packageName = packageType === 'premium' ? 'Paket Premium' : 'Paket Basic';
+                    licenseDocData = {
+                        code: cleanCode,
+                        packageType: packageType,
+                        packageName: packageName,
+                        durationDays: 3,
+                        isUsed: false,
+                        isUniversalTrial: true
+                    };
+                } else {
+                    // 1. Periksa dokumen di Firestore pada koleksi '/licenses/{kode_lisensi}'
+                    if (isFirebaseConfigured && db) {
+                        try {
+                            const docSnap = await db.collection('licenses').doc(cleanCode).get();
+                            if (docSnap.exists) {
+                                licenseDocData = docSnap.data();
+                            }
+                        } catch (fsErr) {
+                            console.warn("Pemeriksaan Firestore /licenses gagal:", fsErr);
                         }
-                    } catch (fsErr) {
-                        console.warn("Pemeriksaan Firestore /licenses gagal:", fsErr);
                     }
-                }
 
-                // 2. Fallback periksa seed licenses lokal jika offline atau Firestore kosong
-                if (!licenseDocData) {
-                    let localLicenses = [];
-                    try {
-                        const saved = localStorage.getItem('fortapos_local_licenses');
-                        localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
-                    } catch (e) {
-                        localLicenses = LOCAL_SEED_LICENSES;
-                    }
-                    const found = localLicenses.find(l => (l.code || '').toUpperCase() === cleanCode);
-                    if (found) {
-                        licenseDocData = { ...found };
+                    // 2. Fallback periksa seed licenses lokal jika offline atau Firestore kosong
+                    if (!licenseDocData) {
+                        let localLicenses = [];
+                        try {
+                            const saved = localStorage.getItem('fortapos_local_licenses');
+                            localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
+                        } catch (e) {
+                            localLicenses = LOCAL_SEED_LICENSES;
+                        }
+                        const found = localLicenses.find(l => (l.code || '').toUpperCase() === cleanCode);
+                        if (found) {
+                            licenseDocData = { ...found };
+                        }
                     }
                 }
 
@@ -3133,31 +3205,45 @@
                     return;
                 }
 
-                // JIKA KODE SUDAH TERPAKAI:
-                if (licenseDocData.isUsed === true) {
+                // JIKA BUKAN KODE UJI COBA UNIVERSAL DAN SUDAH TERPAKAI:
+                if (!isUniversalTrial && !licenseDocData.isUniversalTrial && licenseDocData.isUsed === true) {
                     playBeep('error');
                     showToast('Kode lisensi ini sudah terpakai!', 'error');
                     return;
                 }
 
-                // JIKA KODE VALID ('isUsed' === false):
-                const durationDays = Number(licenseDocData.durationDays) || 3;
+                // JIKA KODE VALID: Tentukan durasi tepat 3 hari untuk uji coba
+                const durationDays = isUniversalTrial ? 3 : (Number(licenseDocData.durationDays) || 3);
                 const packageType = licenseDocData.packageType === 'premium' ? 'premium' : 'basic';
                 const packageName = packageType === 'premium' ? 'Paket Premium' : 'Paket Basic';
 
                 const now = new Date();
                 const expiresAt = new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000)).toISOString();
 
-                // Ubah status 'isUsed' menjadi true di Firestore
+                // Ubah status di Firestore jika terhubung
                 if (isFirebaseConfigured && db) {
                     try {
-                        await db.collection('licenses').doc(cleanCode).set({
-                            ...licenseDocData,
-                            isUsed: true,
-                            usedByStoreId: currentStoreId || (currentUser ? currentUser.storeId : 'STORE'),
-                            activatedAt: now.toISOString(),
-                            expiresAt: expiresAt
-                        }, { merge: true });
+                        if (isUniversalTrial) {
+                            // Kode uji coba universal 3 hari tidak dimatikan agar bisa digunakan siapa saja tanpa batas
+                            await db.collection('licenses').doc(cleanCode).set({
+                                code: cleanCode,
+                                packageType,
+                                packageName,
+                                durationDays: 3,
+                                isUniversalTrial: true,
+                                isUsed: false,
+                                lastActivatedAt: now.toISOString(),
+                                lastUsedByStoreId: currentStoreId || (currentUser ? currentUser.storeId : 'STORE')
+                            }, { merge: true });
+                        } else {
+                            await db.collection('licenses').doc(cleanCode).set({
+                                ...licenseDocData,
+                                isUsed: true,
+                                usedByStoreId: currentStoreId || (currentUser ? currentUser.storeId : 'STORE'),
+                                activatedAt: now.toISOString(),
+                                expiresAt: expiresAt
+                            }, { merge: true });
+                        }
 
                         if (currentStoreId) {
                             await db.collection('stores').doc(currentStoreId).update({
@@ -3167,6 +3253,7 @@
                                     packageName,
                                     durationDays,
                                     status: 'active',
+                                    isTrial: isUniversalTrial,
                                     activatedAt: now.toISOString(),
                                     expiresAt: expiresAt
                                 }
@@ -3184,30 +3271,34 @@
                     packageName,
                     durationDays,
                     status: 'active',
+                    isTrial: isUniversalTrial,
                     activatedAt: now.toISOString(),
                     expiresAt: expiresAt
                 };
                 localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
 
-                // Update local seed cache
-                let localLicenses = [];
-                try {
-                    const saved = localStorage.getItem('fortapos_local_licenses');
-                    localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
-                } catch (e) {
-                    localLicenses = LOCAL_SEED_LICENSES;
-                }
-                const matchIdx = localLicenses.findIndex(l => (l.code || '').toUpperCase() === cleanCode);
-                if (matchIdx !== -1) {
-                    localLicenses[matchIdx].isUsed = true;
-                    localLicenses[matchIdx].usedByStoreId = currentStoreId;
-                    localStorage.setItem('fortapos_local_licenses', JSON.stringify(localLicenses));
+                // Update local seed cache jika bukan universal trial
+                if (!isUniversalTrial) {
+                    let localLicenses = [];
+                    try {
+                        const saved = localStorage.getItem('fortapos_local_licenses');
+                        localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
+                    } catch (e) {
+                        localLicenses = LOCAL_SEED_LICENSES;
+                    }
+                    const matchIdx = localLicenses.findIndex(l => (l.code || '').toUpperCase() === cleanCode);
+                    if (matchIdx !== -1) {
+                        localLicenses[matchIdx].isUsed = true;
+                        localLicenses[matchIdx].usedByStoreId = currentStoreId;
+                        localStorage.setItem('fortapos_local_licenses', JSON.stringify(localLicenses));
+                    }
                 }
 
-                // Buka blokir dashboard kasir
+                // Buka blokir dashboard kasir & aktifkan fitur sesuai paket
                 playBeep('success');
                 triggerHapticFeedback(90);
-                showToast(`Lisensi ${packageName} (${durationDays} Hari) BERHASIL DIAKTIFKAN!`, 'success');
+                const trialBadge = isUniversalTrial ? ' (Uji Coba 3 Hari)' : ` (${durationDays} Hari)`;
+                showToast(`Lisensi ${packageName}${trialBadge} BERHASIL DIAKTIFKAN!`, 'success');
                 logActivity('Aktivasi Lisensi', `Mengaktifkan lisensi ${packageName} (${cleanCode}) masa aktif ${durationDays} hari.`);
 
                 updateLicenseModalCol1UI();
@@ -3398,10 +3489,11 @@
         // ==========================================
         // INITIALIZATION
         // ==========================================
-        window.onload = function() {
+        window.onload = async function() {
             initTheme();
             initLocalStorageData();
-            seedLicensesIfEmpty();
+            
+            updateFirebaseStatusUI();
 
             if (!isFirebaseConfigured) {
                 const banner = document.getElementById('demoModeBanner');
@@ -3478,124 +3570,191 @@
                 // ==========================================
         // POOL PRODUK MODE DEMO & FUNGSI DEMO APLIKASI
         // ==========================================
-        const DEMO_PRODUCT_POOL = [
-            { barcode: '89923451101', name: 'Minyak Goreng Bimoli 1L', category: 'Sembako', unit: 'pcs', stock: 35, buyPrice: 15500, sellPrice: 19000, description: 'Minyak kelapa sawit murni 1L' },
-            { barcode: '89912345202', name: 'Indomie Goreng Spesial', category: 'Makanan', unit: 'bungkus', stock: 85, buyPrice: 2600, sellPrice: 3500, description: 'Mie instan goreng lezat' },
-            { barcode: '89934567303', name: 'Gula Pasir Gulaku 1kg', category: 'Sembako', unit: 'kg', stock: 20, buyPrice: 14000, sellPrice: 17500, description: 'Gula tebu putih bersih' },
-            { barcode: '89945678404', name: 'Kopi Kapal Api Spesial Mix', category: 'Minuman', unit: 'bungkus', stock: 60, buyPrice: 1300, sellPrice: 2000, description: 'Kopi hitam bubuk gula' },
-            { barcode: '89956789505', name: 'Beras Pandan Wangi 5kg', category: 'Sembako', unit: 'karung', stock: 15, buyPrice: 66000, sellPrice: 79000, description: 'Beras pulen aromatik' },
-            { barcode: '89967890606', name: 'Teh Botol Sosro 350ml', category: 'Minuman', unit: 'botol', stock: 40, buyPrice: 3200, sellPrice: 4500, description: 'Teh melati dalam botol' },
-            { barcode: '89978901707', name: 'Sabun Lifebuoy Total 10 110g', category: 'Kebutuhan Rumah', unit: 'pcs', stock: 50, buyPrice: 3600, sellPrice: 5000, description: 'Sabun mandi antibakteri' },
-            { barcode: '89989012808', name: 'Susu Ultra Milk Cokelat 250ml', category: 'Minuman', unit: 'kotak', stock: 30, buyPrice: 5500, sellPrice: 7000, description: 'Susu UHT segar bergizi' },
-            { barcode: '89990123909', name: 'Deterjen Rinso Molto 770g', category: 'Kebutuhan Rumah', unit: 'bungkus', stock: 18, buyPrice: 18500, sellPrice: 23000, description: 'Deterjen konsentrat wangi' },
-            { barcode: '89901234010', name: 'Biskuit Roma Kelapa 300g', category: 'Makanan', unit: 'bungkus', stock: 25, buyPrice: 8500, sellPrice: 11000, description: 'Biskuit rasa kelapa gurih' },
-            { barcode: '89912340111', name: 'Air Mineral Aqua 600ml', category: 'Minuman', unit: 'botol', stock: 96, buyPrice: 2500, sellPrice: 3500, description: 'Air mineral pegunungan' },
-            { barcode: '89923450222', name: 'Shampoo Sunsilk Black 160ml', category: 'Kebutuhan Rumah', unit: 'botol', stock: 22, buyPrice: 17000, sellPrice: 21500, description: 'Shampoo rambut berkilau' },
-            { barcode: '89934560333', name: 'Kecap Manis Bango 520ml', category: 'Sembako', unit: 'pouch', stock: 28, buyPrice: 19500, sellPrice: 24000, description: 'Kecap kedelai hitam alami' },
-            { barcode: '89945670444', name: 'Chiki Balls Keju 55g', category: 'Makanan', unit: 'bungkus', stock: 45, buyPrice: 4200, sellPrice: 6000, description: 'Snack jagung rasa keju' },
-            { barcode: '89956780555', name: 'Pasta Gigi Pepsodent 190g', category: 'Kebutuhan Rumah', unit: 'kotak', stock: 32, buyPrice: 11500, sellPrice: 15000, description: 'Perlindungan gigi berlubang' }
+        // ==========================================
+        // DATA BAWAAN DEFAULT & RESET TOTAL MODE DEMO (20 PRODUK SIAP JUAL)
+        // ==========================================
+        const DEFAULT_DEMO_PRODUCTS = [
+            { firestoreId: 'demo_prod_1', storeId: 'FORTA-DEMO', barcode: '8991002104112', name: 'Minyak Goreng Filma 2L', category: 'Sembako', unit: 'pouch', stock: 24, buyPrice: 32000, sellPrice: 38500, description: 'Minyak goreng kelapa sawit jernih 2 liter' },
+            { firestoreId: 'demo_prod_2', storeId: 'FORTA-DEMO', barcode: '8992003205223', name: 'Beras Premium Ramos 5kg', category: 'Sembako', unit: 'sak', stock: 15, buyPrice: 68000, sellPrice: 78500, description: 'Beras pulen pilihan kualitas super' },
+            { firestoreId: 'demo_prod_3', storeId: 'FORTA-DEMO', barcode: '8993004306334', name: 'Gula Pasir Gulaku Premium 1kg', category: 'Sembako', unit: 'kg', stock: 30, buyPrice: 14500, sellPrice: 17500, description: 'Gula kristal putih murni tebu asli' },
+            { firestoreId: 'demo_prod_4', storeId: 'FORTA-DEMO', barcode: '8994005407445', name: 'Indomie Goreng Spesial 85g', category: 'Makanan', unit: 'bungkus', stock: 120, buyPrice: 2700, sellPrice: 3500, description: 'Mie instan goreng rasa spesial terlaris' },
+            { firestoreId: 'demo_prod_5', storeId: 'FORTA-DEMO', barcode: '8995006508556', name: 'Indomie Kuah Ayam Bawang 69g', category: 'Makanan', unit: 'bungkus', stock: 90, buyPrice: 2600, sellPrice: 3300, description: 'Mie kuah kaldu ayam gurih lezat' },
+            { firestoreId: 'demo_prod_6', storeId: 'FORTA-DEMO', barcode: '8996007609667', name: 'Telur Ayam Negeri Fresh 1kg', category: 'Sembako', unit: 'kg', stock: 18, buyPrice: 25000, sellPrice: 29000, description: 'Telur ayam segar peternakan pilihan' },
+            { firestoreId: 'demo_prod_7', storeId: 'FORTA-DEMO', barcode: '8997008701778', name: 'Susu UHT Ultra Milk Cokelat 1L', category: 'Minuman', unit: 'kotak', stock: 20, buyPrice: 16500, sellPrice: 20500, description: 'Susu segar UHT rasa cokelat kaya kalsium' },
+            { firestoreId: 'demo_prod_8', storeId: 'FORTA-DEMO', barcode: '8998009802889', name: 'Kopi Kapal Api Spesial Mix 10s', category: 'Minuman', unit: 'renteng', stock: 40, buyPrice: 11500, sellPrice: 14000, description: 'Kopi bubuk hitam plus gula aroma mantap' },
+            { firestoreId: 'demo_prod_9', storeId: 'FORTA-DEMO', barcode: '8999010903990', name: 'Teh Celup Sariwangi Asli 25s', category: 'Minuman', unit: 'kotak', stock: 35, buyPrice: 6200, sellPrice: 8000, description: 'Teh hitam celup aroma melati alami' },
+            { firestoreId: 'demo_prod_10', storeId: 'FORTA-DEMO', barcode: '8990121004101', name: 'Air Mineral Le Minerale 600ml', category: 'Minuman', unit: 'botol', stock: 72, buyPrice: 2500, sellPrice: 3500, description: 'Air mineral alami pegunungan segar' },
+            { firestoreId: 'demo_prod_11', storeId: 'FORTA-DEMO', barcode: '8991232105212', name: 'Sabun Mandi Lifebuoy Total 10 110g', category: 'Kebutuhan Rumah', unit: 'pcs', stock: 45, buyPrice: 3800, sellPrice: 5000, description: 'Sabun batang perlindungan kuman dan bakteri' },
+            { firestoreId: 'demo_prod_12', storeId: 'FORTA-DEMO', barcode: '8992343206323', name: 'Pasta Gigi Pepsodent 190g', category: 'Kebutuhan Rumah', unit: 'kotak', stock: 28, buyPrice: 12000, sellPrice: 15500, description: 'Pasta gigi pencegah gigi berlubang aktif' },
+            { firestoreId: 'demo_prod_13', storeId: 'FORTA-DEMO', barcode: '8993454307434', name: 'Shampoo Pantene Anti Dandruff 160ml', category: 'Kebutuhan Rumah', unit: 'botol', stock: 16, buyPrice: 21000, sellPrice: 26500, description: 'Shampoo perawatan ketombe dan kulit kepala' },
+            { firestoreId: 'demo_prod_14', storeId: 'FORTA-DEMO', barcode: '8994565408545', name: 'Deterjen Bubuk Rinso Molto 770g', category: 'Kebutuhan Rumah', unit: 'bungkus', stock: 22, buyPrice: 18500, sellPrice: 23000, description: 'Deterjen konsentrat penghilang noda membandel' },
+            { firestoreId: 'demo_prod_15', storeId: 'FORTA-DEMO', barcode: '8995676509656', name: 'Pembersih Lantai Wipol Karbol 780ml', category: 'Kebutuhan Rumah', unit: 'pouch', stock: 14, buyPrice: 14000, sellPrice: 18000, description: 'Cairan karbol pembersih lantai wangi cemara' },
+            { firestoreId: 'demo_prod_16', storeId: 'FORTA-DEMO', barcode: '8996787601767', name: 'Biskuit Roma Kelapa 300g', category: 'Makanan', unit: 'bungkus', stock: 25, buyPrice: 9500, sellPrice: 12500, description: 'Biskuit renyah kelapa asli lezat bernutrisi' },
+            { firestoreId: 'demo_prod_17', storeId: 'FORTA-DEMO', barcode: '8997898702878', name: 'Wafer Tango Cokelat 130g', category: 'Makanan', unit: 'kotak', stock: 20, buyPrice: 10500, sellPrice: 13500, description: 'Wafer renyah lapisan cokelat lezat berlimpah' },
+            { firestoreId: 'demo_prod_18', storeId: 'FORTA-DEMO', barcode: '8998909803989', name: 'Snack Chitato Sapi Panggang 68g', category: 'Makanan', unit: 'bungkus', stock: 35, buyPrice: 8200, sellPrice: 10500, description: 'Keripik kentang bergelombang rasa sapi panggang' },
+            { firestoreId: 'demo_prod_19', storeId: 'FORTA-DEMO', barcode: '8999010904090', name: 'Kecap Manis Bango Refill 520ml', category: 'Sembako', unit: 'pouch', stock: 26, buyPrice: 20000, sellPrice: 24500, description: 'Kecap manis kedelai hitam Malika alami' },
+            { firestoreId: 'demo_prod_20', storeId: 'FORTA-DEMO', barcode: '8990121005101', name: 'Saus Sambal ABC Asli Botol 335ml', category: 'Sembako', unit: 'botol', stock: 30, buyPrice: 13000, sellPrice: 16500, description: 'Saus sambal pedas nikmat cabai pilihan' }
         ];
 
-        function getRandomDemoProducts(count = 5) {
-            const shuffled = [...DEMO_PRODUCT_POOL].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, count).map((p, idx) => ({
-                firestoreId: 'demo_prod_' + (idx + 1) + '_' + Math.random().toString(36).substring(2, 7),
-                storeId: 'FORTA-DEMO',
-                ...p
-            }));
-        }
+        const DEFAULT_DEMO_SETTINGS = {
+            storeName: 'FortaMart Express Modern',
+            address: 'Jl. Boulevard Kelapa Gading Blok A No. 18, Jakarta Utara',
+            phone: '0812-9988-7700',
+            ownerWhatsapp: '0812-9988-7700',
+            minStockAlert: 5,
+            autoWhatsappStockAlert: true,
+            autoDailyCloudBackup: false
+        };
 
-        function generateDemoTransactions(prods) {
-            if (!prods || prods.length === 0) return [];
-            const p1 = prods[0];
-            const p2 = prods.length > 1 ? prods[1] : prods[0];
+        const DEFAULT_DEMO_EMPLOYEES = [
+            { firestoreId: 'emp_demo_1', name: 'Siti Aminah', storeId: 'FORTA-DEMO', status: 'online', password: '123' },
+            { firestoreId: 'emp_demo_2', name: 'Budi Santoso', storeId: 'FORTA-DEMO', status: 'offline', password: '123' }
+        ];
+
+        function getInitialDemoTransactions() {
             const now = Date.now();
             return [
                 {
-                    firestoreId: 'trx_demo_101',
-                    id: 'TRX-DEMO-01',
-                    date: new Date(now - 3600000 * 2).toISOString(),
+                    firestoreId: 'trx_demo_001',
+                    id: 'TRX-DEMO-001',
+                    date: new Date(now - 7200000).toISOString(),
                     items: [
-                        { name: p1.name, qty: 2, buyPrice: p1.buyPrice, sellPrice: p1.sellPrice },
-                        { name: p2.name, qty: 3, buyPrice: p2.buyPrice, sellPrice: p2.sellPrice }
+                        { name: 'Minyak Goreng Filma 2L', qty: 1, buyPrice: 32000, sellPrice: 38500 },
+                        { name: 'Beras Premium Ramos 5kg', qty: 1, buyPrice: 68000, sellPrice: 78500 },
+                        { name: 'Indomie Goreng Spesial 85g', qty: 5, buyPrice: 2700, sellPrice: 3500 }
                     ],
-                    subtotal: (p1.sellPrice * 2) + (p2.sellPrice * 3),
-                    discount: 2000,
-                    total: (p1.sellPrice * 2) + (p2.sellPrice * 3) - 2000,
+                    subtotal: 134500,
+                    discount: 4500,
+                    total: 130000,
+                    cash: 150000,
+                    change: 20000,
+                    customer: 'Ibu Rahmawati',
+                    cashier: 'Siti Aminah (Kasir)'
+                },
+                {
+                    firestoreId: 'trx_demo_002',
+                    id: 'TRX-DEMO-002',
+                    date: new Date(now - 3600000).toISOString(),
+                    items: [
+                        { name: 'Susu UHT Ultra Milk Cokelat 1L', qty: 2, buyPrice: 16500, sellPrice: 20500 },
+                        { name: 'Biskuit Roma Kelapa 300g', qty: 2, buyPrice: 9500, sellPrice: 12500 },
+                        { name: 'Kopi Kapal Api Spesial Mix 10s', qty: 1, buyPrice: 11500, sellPrice: 14000 }
+                    ],
+                    subtotal: 80000,
+                    discount: 0,
+                    total: 80000,
                     cash: 100000,
-                    change: 100000 - ((p1.sellPrice * 2) + (p2.sellPrice * 3) - 2000),
-                    customer: 'Pelanggan Demo',
-                    cashier: 'User Demo'
+                    change: 20000,
+                    customer: 'Pak Haji Solihin',
+                    cashier: 'Hendro Wijaya (Owner)'
                 }
             ];
         }
 
-        function startDemoMode() {
+        // FUNGSI PEMBERSIH RUANG PENYIMPANAN TERISOLASI MODE DEMO (RESET TOTAL)
+        function clearDemoDataStorage() {
+            const demoKeys = [
+                'fortapos_demo_data',
+                'toko_demo_products',
+                'toko_demo_transactions',
+                'toko_demo_settings',
+                'toko_demo_employees',
+                'toko_demo_logs',
+                'toko_demo_license'
+            ];
+            demoKeys.forEach(k => {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+        }
+
+        function startDemoMode(role = 'owner') {
+            // MEKANISME RESET TOTAL: Seluruh data sesi demo sebelumnya dihapus bersih
+            clearDemoDataStorage();
+
+            const isOwner = (role === 'owner');
             currentUser = {
                 storeId: 'FORTA-DEMO',
-                name: 'User Demo',
-                role: 'owner',
-                isDemo: true
+                name: isOwner ? 'Hendro Wijaya (Owner)' : 'Siti Aminah (Kasir)',
+                role: isOwner ? 'owner' : 'employee',
+                isDemo: true,
+                employeeDocId: isOwner ? null : 'emp_demo_1'
             };
             localStorage.setItem('toko_hj_nurjanah_session', JSON.stringify(currentUser));
 
-            // Muat atau buat 5 produk acak untuk demo
-            let demoProds = [];
-            try {
-                const saved = localStorage.getItem('toko_demo_products');
-                if (saved) demoProds = JSON.parse(saved);
-            } catch (e) { demoProds = []; }
+            // Isi data awal bawaan realistis (20 produk retail lengkap)
+            dbProducts = JSON.parse(JSON.stringify(DEFAULT_DEMO_PRODUCTS));
+            localStorage.setItem('toko_demo_products', JSON.stringify(dbProducts));
 
-            if (!demoProds || demoProds.length === 0) {
-                demoProds = getRandomDemoProducts(5);
-                localStorage.setItem('toko_demo_products', JSON.stringify(demoProds));
-            }
-            dbProducts = demoProds;
+            // Isi transaksi awal demo realistis
+            dbTransactions = getInitialDemoTransactions();
+            localStorage.setItem('toko_demo_transactions', JSON.stringify(dbTransactions));
 
-            let demoTrx = [];
-            try {
-                const savedTrx = localStorage.getItem('toko_demo_transactions');
-                if (savedTrx) demoTrx = JSON.parse(savedTrx);
-            } catch (e) { demoTrx = []; }
-
-            if (!demoTrx || demoTrx.length === 0) {
-                demoTrx = generateDemoTransactions(demoProds);
-                localStorage.setItem('toko_demo_transactions', JSON.stringify(demoTrx));
-            }
-            dbTransactions = demoTrx;
-
-            dbSettings = {
-                storeName: 'Toko Demo FortaPOS',
-                address: 'Mode Demo Interaktif (Maks. 20 Produk)',
-                phone: '0812-0000-DEMO',
-                ownerWhatsapp: '0812-0000-DEMO',
-                minStockAlert: 5,
-                autoWhatsappStockAlert: true,
-                autoDailyCloudBackup: false
-            };
+            // Isi profil toko tiruan yang keren
+            dbSettings = JSON.parse(JSON.stringify(DEFAULT_DEMO_SETTINGS));
             localStorage.setItem('toko_demo_settings', JSON.stringify(dbSettings));
 
+            // Isi data karyawan demo
+            dbEmployees = JSON.parse(JSON.stringify(DEFAULT_DEMO_EMPLOYEES));
+            localStorage.setItem('toko_demo_employees', JSON.stringify(dbEmployees));
+
+            // Log aktivitas awal demo
+            dbActivityLogs = [
+                {
+                    storeId: 'FORTA-DEMO',
+                    userName: currentUser.name,
+                    role: currentUser.role,
+                    action: 'Masuk Demo',
+                    details: `Masuk sebagai ${isOwner ? 'Owner' : 'Karyawan'} Demo Aplikasi (Data aktivitas sebelumnya di-reset total ke 20 produk bawaan).`,
+                    device: 'Demo Device',
+                    timestamp: new Date().toISOString()
+                }
+            ];
+            localStorage.setItem('toko_demo_logs', JSON.stringify(dbActivityLogs));
+
+            // Lisensi Demo 3 hari aktif
+            currentLicense = {
+                code: isOwner ? 'FORTA-PREMIUM-3D' : 'FORTA-BASIC-3D',
+                packageType: isOwner ? 'premium' : 'basic',
+                packageName: isOwner ? 'Paket Premium (Demo 3 Hari)' : 'Paket Basic (Demo 3 Hari)',
+                durationDays: 3,
+                status: 'active',
+                isTrial: true,
+                activatedAt: new Date().toISOString(),
+                expiresAt: new Date(Date.now() + 3 * 86400000).toISOString()
+            };
+            localStorage.setItem('toko_demo_license', JSON.stringify(currentLicense));
+            localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+
+            // Simpan snapshot master terisolasi
+            localStorage.setItem('fortapos_demo_data', JSON.stringify({
+                activeRole: role,
+                initializedAt: new Date().toISOString(),
+                productCount: dbProducts.length
+            }));
+
             document.getElementById('authModal').classList.add('hidden');
-            showToast('Masuk ke Mode Demo! Dimuat 5 produk contoh acak (Maksimal 20 produk)', 'success');
-            logActivity('Mode Demo', 'Pengguna masuk ke Mode Demo Aplikasi.');
+            showToast(`Masuk sebagai ${isOwner ? 'Owner' : 'Karyawan'} Demo! Data bawaan siap jual (20 produk) berhasil dimuat.`, 'success');
             initAppSession();
         }
 
         function exitDemoMode() {
+            // MEKANISME RESET TOTAL: Bersihkan bersih seluruh data demo saat keluar
+            clearDemoDataStorage();
             localStorage.removeItem('toko_hj_nurjanah_session');
             currentUser = null;
             location.reload();
         }
 
-function initLocalStorageData() {
+        function initLocalStorageData() {
             if (currentUser && currentUser.isDemo) {
                 let demoProds = [];
                 try {
                     const saved = localStorage.getItem('toko_demo_products');
                     if (saved) demoProds = JSON.parse(saved);
                 } catch (e) { demoProds = []; }
+
                 if (!demoProds || demoProds.length === 0) {
-                    demoProds = getRandomDemoProducts(5);
+                    demoProds = JSON.parse(JSON.stringify(DEFAULT_DEMO_PRODUCTS));
                     localStorage.setItem('toko_demo_products', JSON.stringify(demoProds));
                 }
                 dbProducts = demoProds;
@@ -3605,8 +3764,9 @@ function initLocalStorageData() {
                     const savedTrx = localStorage.getItem('toko_demo_transactions');
                     if (savedTrx) demoTrx = JSON.parse(savedTrx);
                 } catch (e) { demoTrx = []; }
+
                 if (!demoTrx || demoTrx.length === 0) {
-                    demoTrx = generateDemoTransactions(demoProds);
+                    demoTrx = getInitialDemoTransactions();
                     localStorage.setItem('toko_demo_transactions', JSON.stringify(demoTrx));
                 }
                 dbTransactions = demoTrx;
@@ -3614,9 +3774,29 @@ function initLocalStorageData() {
                 try {
                     const savedSettings = localStorage.getItem('toko_demo_settings');
                     if (savedSettings) dbSettings = { ...dbSettings, ...JSON.parse(savedSettings) };
+                    else dbSettings = JSON.parse(JSON.stringify(DEFAULT_DEMO_SETTINGS));
+                } catch (e) {
+                    dbSettings = JSON.parse(JSON.stringify(DEFAULT_DEMO_SETTINGS));
+                }
+
+                try {
+                    const savedEmp = localStorage.getItem('toko_demo_employees');
+                    if (savedEmp) dbEmployees = JSON.parse(savedEmp);
+                    else dbEmployees = JSON.parse(JSON.stringify(DEFAULT_DEMO_EMPLOYEES));
+                } catch (e) {
+                    dbEmployees = JSON.parse(JSON.stringify(DEFAULT_DEMO_EMPLOYEES));
+                }
+
+                try {
+                    const savedLic = localStorage.getItem('toko_demo_license');
+                    if (savedLic) currentLicense = JSON.parse(savedLic);
                 } catch (e) {}
 
-                dbEmployees = [];
+                try {
+                    const savedLogs = localStorage.getItem('toko_demo_logs');
+                    if (savedLogs) dbActivityLogs = JSON.parse(savedLogs);
+                } catch (e) {}
+
                 return;
             }
 
@@ -3683,7 +3863,6 @@ function initLocalStorageData() {
                 localStorage.setItem('toko_hj_nurjanah_logs', JSON.stringify(dbActivityLogs));
             }
         }
-
         function switchAuthTab(tab) {
             document.getElementById('formLoginOwner').classList.add('hidden');
             document.getElementById('formLoginEmployee').classList.add('hidden');
@@ -4258,129 +4437,153 @@ function initLocalStorageData() {
             }
 
             if (isFirebaseConfigured && db) {
-                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        dbSettings = { ...dbSettings, ...data };
-                        
-                        // Sinkronisasi lisensi dari Firestore
-                        if (data.license) {
-                            currentLicense = data.license;
-                            localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
-                            updateLicenseModalCol1UI();
-                            applyLicenseRestrictions();
-                        }
-
-                        // Monitor Single-Device Access secara real-time
-                        if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
-                            const activeId = data.activeDeviceId;
-                            const myDevId = getOrCreateDeviceId();
-                            if (activeId && activeId !== myDevId) {
-                                showDeviceLockoutModal();
-                            } else {
-                                hideDeviceLockoutModal();
+                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(
+                    doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            dbSettings = { ...dbSettings, ...data };
+                            
+                            // Sinkronisasi lisensi dari Firestore
+                            if (data.license) {
+                                currentLicense = data.license;
+                                localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                                updateLicenseModalCol1UI();
+                                applyLicenseRestrictions();
                             }
-                        }
 
-                        loadSettingsToUI();
-                        updateStockAlertBadges();
-                        renderStockTable();
-                    }
-                });
+                            // Monitor Single-Device Access secara real-time
+                            if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
+                                const activeId = data.activeDeviceId;
+                                const myDevId = getOrCreateDeviceId();
+                                if (activeId && activeId !== myDevId) {
+                                    showDeviceLockoutModal();
+                                } else {
+                                    hideDeviceLockoutModal();
+                                }
+                            }
+
+                            loadSettingsToUI();
+                            updateStockAlertBadges();
+                            renderStockTable();
+                        }
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubStore);
 
-                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(snapshot => {
-                    dbProducts = [];
-                    snapshot.forEach(doc => {
-                        dbProducts.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
-                        if (savedProducts) {
-                            try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
+                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(
+                    snapshot => {
+                        dbProducts = [];
+                        snapshot.forEach(doc => {
+                            dbProducts.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
+                            if (savedProducts) {
+                                try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
+                            }
+                            if (dbProducts.length === 0) {
+                                dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
+                            }
                         }
-                        if (dbProducts.length === 0) {
-                            dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
-                        }
-                    }
-                    renderStockTable();
-                    renderCart();
-                    updateStockCategoryFilterDropdown();
-                    updateStockAlertBadges();
-                });
+                        renderStockTable();
+                        renderCart();
+                        updateStockCategoryFilterDropdown();
+                        updateStockAlertBadges();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubProd);
 
-                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(doc => {
-                    if (doc.exists && doc.data().list) {
-                        dbCategories = doc.data().list;
-                    }
-                    renderCategories();
-                    updateStockCategoryFilterDropdown();
-                });
+                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(
+                    doc => {
+                        if (doc.exists && doc.data().list) {
+                            dbCategories = doc.data().list;
+                        }
+                        renderCategories();
+                        updateStockCategoryFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubCat);
 
-                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(doc => {
-                    if (doc.exists && doc.data().list) {
-                        dbUnits = doc.data().list;
-                        renderUnits();
-                    }
-                });
+                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(
+                    doc => {
+                        if (doc.exists && doc.data().list) {
+                            dbUnits = doc.data().list;
+                            renderUnits();
+                        }
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubUnit);
 
-                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(snapshot => {
-                    dbCustomers = [];
-                    snapshot.forEach(doc => {
-                        dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        dbCustomers = [
-                            { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
-                            { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
-                            { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
-                        ];
-                    }
-                    renderCustomers();
-                    updateCustomerFilterDropdown();
-                });
+                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(
+                    snapshot => {
+                        dbCustomers = [];
+                        snapshot.forEach(doc => {
+                            dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            dbCustomers = [
+                                { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
+                                { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
+                                { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
+                            ];
+                        }
+                        renderCustomers();
+                        updateCustomerFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubCust);
 
-                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(snapshot => {
-                    dbTransactions = [];
-                    snapshot.forEach(doc => {
-                        dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
-                        if (savedTrx) {
-                            try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
+                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(
+                    snapshot => {
+                        dbTransactions = [];
+                        snapshot.forEach(doc => {
+                            dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
+                            if (savedTrx) {
+                                try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
+                            }
                         }
-                    }
-                    dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    updateCustomerFilterDropdown();
-                    updateEmployeeFilterDropdown();
-                    renderHistory();
-                    updateChart();
-                });
+                        dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        updateCustomerFilterDropdown();
+                        updateEmployeeFilterDropdown();
+                        renderHistory();
+                        updateChart();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubTrx);
 
-                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(snapshot => {
-                    dbEmployees = [];
-                    snapshot.forEach(doc => {
-                        dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    renderEmployees();
-                    updateEmployeeFilterDropdown();
-                });
+                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(
+                    snapshot => {
+                        dbEmployees = [];
+                        snapshot.forEach(doc => {
+                            dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        renderEmployees();
+                        updateEmployeeFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubEmp);
 
-                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(snapshot => {
-                    dbActivityLogs = [];
-                    snapshot.forEach(doc => {
-                        dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    renderActivityLogs();
-                });
+                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(
+                    snapshot => {
+                        dbActivityLogs = [];
+                        snapshot.forEach(doc => {
+                            dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        renderActivityLogs();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubLogs);
             } else {
                 loadSettingsToUI();
@@ -4410,7 +4613,7 @@ function initLocalStorageData() {
                 timestamp: new Date().toISOString()
             };
 
-            if (isFirebaseConfigured && db) {
+            if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                 try {
                     await db.collection('stores').doc(currentStoreId).collection('activityLogs').add(entry);
                 } catch (err) {
@@ -4542,10 +4745,14 @@ function initLocalStorageData() {
             dbSettings.autoDailyCloudBackup = document.getElementById('settingAutoDailyCloudBackup') ? document.getElementById('settingAutoDailyCloudBackup').checked : true;
 
             try {
-                if (isFirebaseConfigured && db) {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                     await db.collection('stores').doc(currentStoreId).update(dbSettings);
                 }
-                localStorage.setItem('toko_hj_nurjanah_db_settings', JSON.stringify(dbSettings));
+                if (currentUser && currentUser.isDemo) {
+                    localStorage.setItem('toko_demo_settings', JSON.stringify(dbSettings));
+                } else {
+                    localStorage.setItem('toko_hj_nurjanah_db_settings', JSON.stringify(dbSettings));
+                }
                 loadSettingsToUI();
                 updateStockAlertBadges();
                 renderStockTable();
@@ -5668,12 +5875,12 @@ function initLocalStorageData() {
                     if (prod) {
                         const newStock = Math.max(0, prod.stock - item.qty);
                         prod.stock = newStock;
-                        if (isFirebaseConfigured && db) {
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                             await db.collection('stores').doc(currentStoreId).collection('products').doc(item.firestoreId).update({ stock: newStock });
                         }
                     }
                 }
-                if (!isFirebaseConfigured) saveLocalProducts();
+                if (!isFirebaseConfigured || (currentUser && currentUser.isDemo)) saveLocalProducts();
 
                 const customerName = document.getElementById('cartCustomerSelect').value;
                 const transactionId = 'TRX-' + Date.now().toString().slice(-6);
@@ -5693,7 +5900,7 @@ function initLocalStorageData() {
                     cashier_uid: cashierUid
                 };
 
-                if (isFirebaseConfigured && db) {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                     const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
                     newTrx.firestoreId = docRef.id;
                 } else {
@@ -6306,7 +6513,7 @@ function initLocalStorageData() {
             };
 
             try {
-                if (isFirebaseConfigured && db) {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                     if (editId) {
                         await db.collection('stores').doc(currentStoreId).collection('products').doc(editId).update(productData);
                     } else {
@@ -6342,7 +6549,7 @@ function initLocalStorageData() {
         function deleteProduct(firestoreId) {
             showCustomConfirm('Hapus Barang', 'Apakah Anda yakin ingin menghapus barang ini dari stok?', async () => {
                 try {
-                    if (isFirebaseConfigured && db) {
+                    if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
                         await db.collection('stores').doc(currentStoreId).collection('products').doc(firestoreId).delete();
                     } else {
                         dbProducts = dbProducts.filter(p => p.firestoreId !== firestoreId);
