@@ -21,6 +21,18 @@
                     enumerable: true
                 });
             } catch (e) {}
+
+            try {
+                const origError = console.error;
+                console.error = function(...args) {
+                    const str = args.map(a => typeof a === 'object' ? (a && a.message ? a.message : JSON.stringify(a)) : String(a)).join(' ');
+                    if (str.includes('fortapos-subscribe') || str.includes('Could not reach Cloud Firestore') || str.includes('permission-denied') || str.includes('@firebase/firestore')) {
+                        console.warn("[FortaPOS Mode Lokal / Offline]", str);
+                        return;
+                    }
+                    origError.apply(console, args);
+                };
+            } catch (e) {}
         })();
     </script>
 
@@ -2414,6 +2426,12 @@
         let db = null;
 
         try {
+            if (typeof firebase !== 'undefined' && firebase.firestore) {
+                firebase.firestore.setLogLevel('silent');
+            }
+        } catch (e) {}
+
+        try {
             if (firebaseConfig.apiKey && 
                 firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" && 
                 firebaseConfig.projectId && 
@@ -2424,9 +2442,10 @@
                 }
                 db = firebase.firestore();
                 isFirebaseConfigured = true;
+                console.log("Firebase Firestore terhubung aktif untuk sinkronisasi multi-device.");
             }
         } catch (err) {
-            console.warn("Inisialisasi Firebase gagal, menggunakan mode lokal fallback:", err);
+            console.warn("Inisialisasi Firebase beralih ke mode lokal fallback:", err);
             isFirebaseConfigured = false;
         }
 
@@ -2796,6 +2815,30 @@
         // ==============================================================
         // SISTEM LISENSI BERLANGGANAN (SAAS) & SINGLE-DEVICE FUNCTIONS
         // ==============================================================
+        // ==========================================
+        // FIRESTORE GRACEFUL ERROR HANDLING & OFFLINE FALLBACK
+        // ==========================================
+        function handleFirestoreError(err) {
+            if (!err) return;
+            console.warn("Peringatan sinkronisasi Firestore (" + (err.code || "info") + "):", err.message || err);
+            // Jangan mematikan db.disableNetwork() atau isFirebaseConfigured secara permanen agar operasi login, logout, dan transaksi tetap dapat mencoba komunikasi dengan Firestore
+            updateFirebaseStatusUI(false);
+        }
+
+        async function checkFirestoreAvailability() {
+            if (!isFirebaseConfigured || !db) return;
+            try {
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Firestore connection timeout')), 3500)
+                );
+                const checkPromise = db.collection('stores').limit(1).get();
+                await Promise.race([checkPromise, timeoutPromise]);
+                updateFirebaseStatusUI(true);
+            } catch (err) {
+                console.warn("Uji koneksi Firestore:", err.message || err);
+            }
+        }
+
         async function seedLicensesIfEmpty() {
             if (!isFirebaseConfigured || !db) return;
             try {
@@ -2813,9 +2856,9 @@
                     }, { merge: true });
                 });
                 await batch.commit();
-                console.log("Firebase Firestore: Koleksi /licenses disinkronkan dengan kode uji coba 3 hari.");
+                console.log("Firebase Firestore: Koleksi /licenses disinkronkan.");
             } catch (e) {
-                console.warn("Auto-seed koleksi /licenses di Firestore dilewati:", e);
+                console.warn("Pemberitahuan inisialisasi /licenses:", e.message || e);
             }
         }
 
@@ -3293,25 +3336,44 @@
             const currentDeviceIdText = document.getElementById('currentDeviceIdText');
             if (currentDeviceIdText) currentDeviceIdText.innerText = myDeviceId;
 
+            // Paket Premium mendukung multi-device tanpa pemblokiran sesi
+            const isPremium = currentLicense && currentLicense.packageType === 'premium';
+            if (isPremium) {
+                hideDeviceLockoutModal();
+                if (isFirebaseConfigured && db && currentStoreId) {
+                    try {
+                        await db.collection('stores').doc(currentStoreId).update({
+                            currentActiveDevice: myDeviceId,
+                            activeDeviceId: myDeviceId,
+                            activeDeviceLastSeen: new Date().toISOString()
+                        });
+                        localStorage.setItem('fortapos_active_device_id', myDeviceId);
+                    } catch (e) {}
+                }
+                return true;
+            }
+
             if (isFirebaseConfigured && db && currentStoreId) {
                 try {
                     const storeDoc = await db.collection('stores').doc(currentStoreId).get();
                     if (storeDoc.exists) {
                         const data = storeDoc.data();
-                        const activeId = data.activeDeviceId;
+                        const activeId = (data.currentActiveDevice || data.activeDeviceId || "").trim();
 
-                        // Jika perangkat lain sedang aktif:
+                        // Jika perangkat lain sedang aktif pada paket Basic:
                         if (activeId && activeId !== myDeviceId) {
                             showDeviceLockoutModal();
                             return false;
                         }
 
-                        // Jika belum ada perangkat aktif atau sama: ikat ke perangkat ini
+                        // Jika belum ada perangkat aktif, atau sudah logout/kosong, atau perangkat yang sama:
                         if (!activeId || activeId === myDeviceId) {
                             await db.collection('stores').doc(currentStoreId).update({
+                                currentActiveDevice: myDeviceId,
                                 activeDeviceId: myDeviceId,
                                 activeDeviceLastSeen: new Date().toISOString()
                             });
+                            localStorage.setItem('fortapos_active_device_id', myDeviceId);
                         }
                     }
                 } catch (e) {
@@ -3323,25 +3385,17 @@
             return true;
         }
 
-        function showDeviceLockoutModal() {
-            const modal = document.getElementById('deviceLockoutModal');
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function hideDeviceLockoutModal() {
-            const modal = document.getElementById('deviceLockoutModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
         async function takeoverDeviceSession() {
             const myDeviceId = getOrCreateDeviceId();
             if (isFirebaseConfigured && db && currentStoreId) {
                 try {
                     await db.collection('stores').doc(currentStoreId).update({
+                        currentActiveDevice: myDeviceId,
                         activeDeviceId: myDeviceId,
                         activeDeviceLastSeen: new Date().toISOString()
                     });
-                    showToast('Sesi perangkat berhasil dipindahkan ke sini!', 'success');
+                    localStorage.setItem('fortapos_active_device_id', myDeviceId);
+                    showToast('Sesi perangkat berhasil dipindahkan ke perangkat ini!', 'success');
                     logActivity('Single Device', 'Memindahkan activeDeviceId ke perangkat: ' + myDeviceId);
                 } catch (e) {
                     console.warn("Gagal takeover device:", e);
@@ -3409,10 +3463,11 @@
         // ==========================================
         // INITIALIZATION
         // ==========================================
-        window.onload = function() {
+        window.onload = async function() {
             initTheme();
             initLocalStorageData();
-            seedLicensesIfEmpty();
+            
+            updateFirebaseStatusUI();
 
             if (!isFirebaseConfigured) {
                 const banner = document.getElementById('demoModeBanner');
@@ -3856,6 +3911,7 @@
             }
 
             const storeId = 'HJN-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            const devId = getOrCreateDeviceId();
 
             const ownerAccount = {
                 storeId,
@@ -3865,6 +3921,9 @@
                 password,
                 address: 'Alamat Toko Baru',
                 phone: '0812XXXXXXXX',
+                currentActiveDevice: devId,
+                activeDeviceId: devId,
+                activeDeviceLastSeen: new Date().toISOString(),
                 createdAt: new Date().toISOString()
             };
 
@@ -3926,43 +3985,73 @@
             const password = (passInput ? passInput.value : '').trim();
 
             if (!email || !password) {
-                showToast('Email dan Password wajib diisi!', 'error');
+                showToast('Email / Username dan Password wajib diisi!', 'error');
                 return;
             }
 
             let foundStore = null;
 
-            // 1. Verifikasi pencocokan data input login secara presisi (exact match) di Firebase Firestore
+            // 1. Verifikasi pencocokan data input login di Firebase Firestore
             if (isFirebaseConfigured && db) {
                 try {
-                    const snapshot = await db.collection('stores')
+                    // Coba query langsung berdasarkan email
+                    let snapshot = await db.collection('stores')
                         .where('email', '==', email)
                         .where('password', '==', password)
                         .get();
 
+                    if (snapshot.empty) {
+                        // Coba query berdasarkan ownerName (username)
+                        snapshot = await db.collection('stores')
+                            .where('ownerName', '==', email)
+                            .where('password', '==', password)
+                            .get();
+                    }
+
+                    if (snapshot.empty) {
+                        // Coba query berdasarkan storeId
+                        snapshot = await db.collection('stores')
+                            .where('storeId', '==', email.toUpperCase())
+                            .where('password', '==', password)
+                            .get();
+                    }
+
                     if (!snapshot.empty) {
-                        const storeData = snapshot.docs[0].data();
+                        const docSnap = snapshot.docs[0];
+                        const storeData = docSnap.data();
                         foundStore = {
-                            storeId: storeData.storeId || snapshot.docs[0].id,
+                            ...storeData,
+                            storeId: storeData.storeId || docSnap.id,
                             ownerName: storeData.ownerName || 'Owner',
                             storeName: storeData.storeName || dbSettings.storeName,
                             email: storeData.email || email,
-                            address: storeData.address,
-                            phone: storeData.phone
+                            address: storeData.address || '',
+                            phone: storeData.phone || '',
+                            license: storeData.license || null,
+                            currentActiveDevice: storeData.currentActiveDevice || storeData.activeDeviceId || '',
+                            activeDeviceId: storeData.activeDeviceId || storeData.currentActiveDevice || ''
                         };
                     } else {
-                        // Verifikasi pencocokan case-insensitive pada email dengan password presisi
+                        // Verifikasi fleksibel case-insensitive pada email/ownerName/storeId dengan password presisi
                         const allStores = await db.collection('stores').get();
                         allStores.forEach(doc => {
                             const data = doc.data();
-                            if ((data.email || '').toLowerCase() === email.toLowerCase() && data.password === password) {
+                            const em = (data.email || '').toLowerCase();
+                            const ow = (data.ownerName || '').toLowerCase();
+                            const st = (data.storeId || doc.id || '').toLowerCase();
+                            const target = email.toLowerCase();
+                            if ((em === target || ow === target || st === target) && data.password === password) {
                                 foundStore = {
+                                    ...data,
                                     storeId: data.storeId || doc.id,
                                     ownerName: data.ownerName || 'Owner',
                                     storeName: data.storeName || dbSettings.storeName,
                                     email: data.email || email,
-                                    address: data.address,
-                                    phone: data.phone
+                                    address: data.address || '',
+                                    phone: data.phone || '',
+                                    license: data.license || null,
+                                    currentActiveDevice: data.currentActiveDevice || data.activeDeviceId || '',
+                                    activeDeviceId: data.activeDeviceId || data.currentActiveDevice || ''
                                 };
                             }
                         });
@@ -3972,7 +4061,7 @@
                 }
             }
 
-            // 2. Verifikasi pencocokan data input login secara presisi (exact match) di database localStorage
+            // 2. Verifikasi pencocokan data input login secara presisi di database localStorage jika belum ditemukan
             if (!foundStore) {
                 let localOwners = [];
                 try {
@@ -3984,8 +4073,10 @@
                     localOwners = [];
                 }
 
-                const matched = localOwners.find(o => 
-                    ((o.email || '').toLowerCase() === email.toLowerCase()) && 
+                const matched = localOwners.find(o =>
+                    (((o.email || '').toLowerCase() === email.toLowerCase()) ||
+                     ((o.ownerName || '').toLowerCase() === email.toLowerCase()) ||
+                     ((o.storeId || '').toUpperCase() === email.toUpperCase())) &&
                     (o.password === password)
                 );
 
@@ -4001,6 +4092,20 @@
                 return;
             }
 
+            // Sinkronkan akun owner ke database localStorage perangkat ini (mendukung login multi-device & offline)
+            try {
+                let localOwners = [];
+                const savedOwners = localStorage.getItem('toko_registered_owners');
+                if (savedOwners) localOwners = JSON.parse(savedOwners);
+                const exIdx = localOwners.findIndex(o => o.storeId === foundStore.storeId || (o.email || '').toLowerCase() === (foundStore.email || '').toLowerCase());
+                if (exIdx >= 0) {
+                    localOwners[exIdx] = { ...localOwners[exIdx], ...foundStore };
+                } else {
+                    localOwners.push(foundStore);
+                }
+                localStorage.setItem('toko_registered_owners', JSON.stringify(localOwners));
+            } catch (e) {}
+
             // 4. JIKA DATA COCOK & TERDAFTAR, BERIKAN HAK AKSES OWNER
             const storeId = foundStore.storeId || 'HJN-' + Math.random().toString(36).substring(2, 8).toUpperCase();
             const ownerName = foundStore.ownerName || 'Owner';
@@ -4012,30 +4117,54 @@
             if (foundStore.phone) dbSettings.phone = foundStore.phone;
             localStorage.setItem('toko_hj_nurjanah_db_settings', JSON.stringify(dbSettings));
 
-            currentUser = { 
-                storeId, 
-                name: ownerName, 
-                role: 'owner', 
-                email: foundStore.email || email 
+            currentUser = {
+                storeId,
+                name: ownerName,
+                role: 'owner',
+                email: foundStore.email || email
             };
-
+            currentStoreId = storeId;
             localStorage.setItem('toko_hj_nurjanah_session', JSON.stringify(currentUser));
             document.getElementById('authModal').classList.add('hidden');
-            
+
             // Muat data lisensi toko dari database jika tersimpan
             if (foundStore.license) {
                 currentLicense = foundStore.license;
                 localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                updateLicenseModalCol1UI();
+                applyLicenseRestrictions();
+            }
+
+            // Validasi Single-Device Access (1 Akun Owner = 1 Device pada Basic, Multi-Device pada Premium)
+            const myDeviceId = getOrCreateDeviceId();
+            const activeDev = (foundStore.currentActiveDevice || foundStore.activeDeviceId || "").trim();
+            const isPremium = currentLicense && currentLicense.packageType === 'premium';
+
+            // Jika device sebelumnya sudah log out (activeDev kosong/reset), atau perangkat yang sama, atau lisensi Premium:
+            // Izinkan perangkat baru masuk langsung dan perbarui active device di Firestore & localStorage
+            if (!activeDev || activeDev === myDeviceId || isPremium) {
+                if (isFirebaseConfigured && db && storeId) {
+                    try {
+                        await db.collection('stores').doc(storeId).update({
+                            currentActiveDevice: myDeviceId,
+                            activeDeviceId: myDeviceId,
+                            activeDeviceLastSeen: new Date().toISOString()
+                        });
+                    } catch (e) {
+                        console.warn("Gagal memperbarui active device di Firestore:", e);
+                    }
+                }
+                localStorage.setItem('fortapos_active_device_id', myDeviceId);
+                hideDeviceLockoutModal();
+            } else {
+                // Perangkat lain masih aktif pada paket Basic
+                showToast('Akun sedang aktif di perangkat lain. Silakan putuskan perangkat sebelumnya atau gunakan fitur Takeover.', 'warning');
+                showDeviceLockoutModal();
+                return;
             }
 
             showToast('Login Owner berhasil! Selamat datang, ' + ownerName, 'success');
             logActivity('Autentikasi', 'Owner ' + ownerName + ' berhasil login.');
-
-            // Validasi Single-Device Access (1 Akun Owner = 1 Device)
-            const deviceAllowed = await checkAndEnforceSingleDeviceSession();
-            if (!deviceAllowed) {
-                return; // Terkunci di modal deviceLockoutModal
-            }
 
             // Validasi Lisensi Berlangganan
             if (!isLicenseActive()) {
@@ -4044,6 +4173,8 @@
                 initAppSession();
             }
         }
+        
+        
 
         async function handleLoginEmployee(e) {
             e.preventDefault();
@@ -4087,7 +4218,8 @@
                             storeId: storeData.storeId || storeId,
                             storeName: storeData.storeName || 'Nama Toko',
                             address: storeData.address || '',
-                            phone: storeData.phone || ''
+                            phone: storeData.phone || '',
+                            license: storeData.license || null
                         };
 
                         const empSnap = await db.collection('stores').doc(storeId).collection('employees').get();
@@ -4182,6 +4314,10 @@
                 if (matchedStore.address) dbSettings.address = matchedStore.address;
                 if (matchedStore.phone) dbSettings.phone = matchedStore.phone;
                 localStorage.setItem('toko_hj_nurjanah_db_settings', JSON.stringify(dbSettings));
+                if (matchedStore.license) {
+                    currentLicense = matchedStore.license;
+                    localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                }
             }
 
             currentUser = { 
@@ -4200,34 +4336,40 @@
         }
 
         async function logoutApp() {
-            // Kosongkan status activeDeviceId di Firestore agar Owner bisa pindah perangkat dengan aman
-            if (currentUser && currentUser.role === 'owner' && isFirebaseConfigured && db && currentStoreId) {
-                try {
-                    await db.collection('stores').doc(currentStoreId).update({
-                        activeDeviceId: null
-                    });
-                } catch (e) {
-                    console.warn("Gagal mengosongkan activeDeviceId saat logout:", e);
+            // Kosongkan status active device di Firestore agar Owner bisa pindah perangkat dengan aman
+            if (currentUser && currentUser.role === 'owner' && currentStoreId) {
+                if (db) {
+                    try {
+                        await db.collection('stores').doc(currentStoreId).update({
+                            currentActiveDevice: "",
+                            activeDeviceId: "",
+                            activeDeviceLastSeen: null
+                        });
+                        console.log("Device aktif berhasil di-reset di Firestore saat logout.");
+                    } catch (e) {
+                        console.warn("Gagal mengosongkan status device saat logout:", e);
+                    }
                 }
+                // Bersihkan juga cache active device lokal
+                localStorage.removeItem('fortapos_active_device_id');
             }
 
             if (currentUser && currentUser.role === 'employee' && currentUser.employeeDocId) {
-                try {
-                    if (isFirebaseConfigured && db) {
+                if (db) {
+                    try {
                         await db.collection('stores').doc(currentStoreId || currentUser.storeId).collection('employees').doc(currentUser.employeeDocId).update({
                             status: 'offline',
                             lastActive: new Date().toISOString()
                         });
-                    } else {
-                        const emp = dbEmployees.find(e => e.firestoreId === currentUser.employeeDocId);
-                        if (emp) {
-                            emp.status = 'offline';
-                            emp.lastActive = new Date().toISOString();
-                            saveLocalEmployees();
-                        }
+                    } catch (e) {
+                        console.warn("Gagal update status offline:", e);
                     }
-                } catch (e) {
-                    console.warn("Gagal update status offline:", e);
+                }
+                const emp = dbEmployees.find(e => e.firestoreId === currentUser.employeeDocId);
+                if (emp) {
+                    emp.status = 'offline';
+                    emp.lastActive = new Date().toISOString();
+                    saveLocalEmployees();
                 }
             }
 
@@ -4237,6 +4379,8 @@
             currentUser = null;
             location.reload();
         }
+        
+        
 
         window.addEventListener('beforeunload', function() {
             if (currentUser && currentUser.role === 'employee' && currentUser.employeeDocId && isFirebaseConfigured && db) {
@@ -4356,129 +4500,154 @@
             }
 
             if (isFirebaseConfigured && db) {
-                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        dbSettings = { ...dbSettings, ...data };
-                        
-                        // Sinkronisasi lisensi dari Firestore
-                        if (data.license) {
-                            currentLicense = data.license;
-                            localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
-                            updateLicenseModalCol1UI();
-                            applyLicenseRestrictions();
-                        }
-
-                        // Monitor Single-Device Access secara real-time
-                        if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
-                            const activeId = data.activeDeviceId;
-                            const myDevId = getOrCreateDeviceId();
-                            if (activeId && activeId !== myDevId) {
-                                showDeviceLockoutModal();
-                            } else {
-                                hideDeviceLockoutModal();
+                const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(
+                    doc => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            dbSettings = { ...dbSettings, ...data };
+                            
+                            // Sinkronisasi lisensi dari Firestore
+                            if (data.license) {
+                                currentLicense = data.license;
+                                localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                                updateLicenseModalCol1UI();
+                                applyLicenseRestrictions();
                             }
-                        }
 
-                        loadSettingsToUI();
-                        updateStockAlertBadges();
-                        renderStockTable();
-                    }
-                });
+                            // Monitor Single-Device Access secara real-time
+                            if (currentUser && currentUser.role === 'owner' && !currentUser.isDemo) {
+                                const isPremium = currentLicense && currentLicense.packageType === 'premium';
+                                const activeId = (data.currentActiveDevice || data.activeDeviceId || "").trim();
+                                const myDevId = getOrCreateDeviceId();
+                                if (!isPremium && activeId && activeId !== myDevId) {
+                                    showDeviceLockoutModal();
+                                } else {
+                                    hideDeviceLockoutModal();
+                                }
+                            }
+
+                            loadSettingsToUI();
+                            updateStockAlertBadges();
+                            renderStockTable();
+                        }
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubStore);
 
-                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(snapshot => {
-                    dbProducts = [];
-                    snapshot.forEach(doc => {
-                        dbProducts.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
-                        if (savedProducts) {
-                            try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
+                const unsubProd = db.collection('stores').doc(currentStoreId).collection('products').onSnapshot(
+                    snapshot => {
+                        dbProducts = [];
+                        snapshot.forEach(doc => {
+                            dbProducts.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbProducts.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            const savedProducts = localStorage.getItem('toko_hj_nurjanah_products');
+                            if (savedProducts) {
+                                try { dbProducts = JSON.parse(savedProducts); } catch (e) { dbProducts = []; }
+                            }
+                            if (dbProducts.length === 0) {
+                                dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
+                            }
                         }
-                        if (dbProducts.length === 0) {
-                            dbProducts = DEFAULT_SEED_PRODUCTS.map((p, idx) => ({ firestoreId: 'prod_' + (idx + 1), ...p }));
-                        }
-                    }
-                    renderStockTable();
-                    renderCart();
-                    updateStockCategoryFilterDropdown();
-                    updateStockAlertBadges();
-                });
+                        renderStockTable();
+                        renderCart();
+                        updateStockCategoryFilterDropdown();
+                        updateStockAlertBadges();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubProd);
 
-                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(doc => {
-                    if (doc.exists && doc.data().list) {
-                        dbCategories = doc.data().list;
-                    }
-                    renderCategories();
-                    updateStockCategoryFilterDropdown();
-                });
+                const unsubCat = db.collection('stores').doc(currentStoreId).collection('categories').doc('list').onSnapshot(
+                    doc => {
+                        if (doc.exists && doc.data().list) {
+                            dbCategories = doc.data().list;
+                        }
+                        renderCategories();
+                        updateStockCategoryFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubCat);
 
-                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(doc => {
-                    if (doc.exists && doc.data().list) {
-                        dbUnits = doc.data().list;
-                        renderUnits();
-                    }
-                });
+                const unsubUnit = db.collection('stores').doc(currentStoreId).collection('units').doc('list').onSnapshot(
+                    doc => {
+                        if (doc.exists && doc.data().list) {
+                            dbUnits = doc.data().list;
+                            renderUnits();
+                        }
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubUnit);
 
-                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(snapshot => {
-                    dbCustomers = [];
-                    snapshot.forEach(doc => {
-                        dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        dbCustomers = [
-                            { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
-                            { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
-                            { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
-                        ];
-                    }
-                    renderCustomers();
-                    updateCustomerFilterDropdown();
-                });
+                const unsubCust = db.collection('stores').doc(currentStoreId).collection('customers').onSnapshot(
+                    snapshot => {
+                        dbCustomers = [];
+                        snapshot.forEach(doc => {
+                            dbCustomers.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbCustomers.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            dbCustomers = [
+                                { firestoreId: 'c1', name: 'Ibu Rahmawati', phone: '081234567890', address: 'Jl. Merak No. 12' },
+                                { firestoreId: 'c2', name: 'Pak Haji Solihin', phone: '085712345678', address: 'Komplek Melati Blok B4' },
+                                { firestoreId: 'c3', name: 'Bu Dewi Sartika', phone: '087812349999', address: 'Jl. Mawar Indah No. 5' }
+                            ];
+                        }
+                        renderCustomers();
+                        updateCustomerFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubCust);
 
-                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(snapshot => {
-                    dbTransactions = [];
-                    snapshot.forEach(doc => {
-                        dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
-                        const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
-                        if (savedTrx) {
-                            try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
+                const unsubTrx = db.collection('stores').doc(currentStoreId).collection('transactions').onSnapshot(
+                    snapshot => {
+                        dbTransactions = [];
+                        snapshot.forEach(doc => {
+                            dbTransactions.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        if (dbTransactions.length === 0 && (currentStoreId === 'HJN-DEMO' || !isFirebaseConfigured)) {
+                            const savedTrx = localStorage.getItem('toko_hj_nurjanah_transactions');
+                            if (savedTrx) {
+                                try { dbTransactions = JSON.parse(savedTrx); } catch (e) { dbTransactions = []; }
+                            }
                         }
-                    }
-                    dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-                    updateCustomerFilterDropdown();
-                    updateEmployeeFilterDropdown();
-                    renderHistory();
-                    updateChart();
-                });
+                        dbTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                        updateCustomerFilterDropdown();
+                        updateEmployeeFilterDropdown();
+                        renderHistory();
+                        updateChart();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubTrx);
 
-                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(snapshot => {
-                    dbEmployees = [];
-                    snapshot.forEach(doc => {
-                        dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    renderEmployees();
-                    updateEmployeeFilterDropdown();
-                });
+                const unsubEmp = db.collection('stores').doc(currentStoreId).collection('employees').onSnapshot(
+                    snapshot => {
+                        dbEmployees = [];
+                        snapshot.forEach(doc => {
+                            dbEmployees.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        renderEmployees();
+                        updateEmployeeFilterDropdown();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubEmp);
 
-                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(snapshot => {
-                    dbActivityLogs = [];
-                    snapshot.forEach(doc => {
-                        dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
-                    });
-                    dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                    renderActivityLogs();
-                });
+                const unsubLogs = db.collection('stores').doc(currentStoreId).collection('activityLogs').onSnapshot(
+                    snapshot => {
+                        dbActivityLogs = [];
+                        snapshot.forEach(doc => {
+                            dbActivityLogs.push({ firestoreId: doc.id, ...doc.data() });
+                        });
+                        dbActivityLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                        renderActivityLogs();
+                    },
+                    err => handleFirestoreError(err)
+                );
                 unsubscribers.push(unsubLogs);
             } else {
                 loadSettingsToUI();
