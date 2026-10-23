@@ -1516,6 +1516,24 @@
                     </button>
                 </div>
             </div>
+
+            <!-- KARTU HAPUS AKUN & DATA TOKO (DANGER ZONE) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-200 space-y-4 md:col-span-2 max-w-xl mx-auto w-full">
+                <div class="flex justify-between items-center border-b border-red-100 pb-3">
+                    <h2 class="font-bold text-red-700 flex items-center space-x-2 text-sm">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600"></i>
+                        <span>Zona Berbahaya: Hapus Akun & Data Toko</span>
+                    </h2>
+                    <span class="text-[10px] bg-red-100 text-red-800 px-2.5 py-0.5 rounded-full font-bold">Permanen</span>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Tindakan ini akan menghapus akun Owner beserta seluruh data toko (katalog stok produk, riwayat transaksi kasir, data karyawan, kategori, dan pengaturan toko) secara permanen dari Cloud Firestore dan perangkat ini. Tindakan ini tidak dapat dibatalkan.
+                </p>
+                <button type="button" onclick="confirmDeleteAccount()" id="btnDeleteAccount" class="w-full bg-red-600 hover:bg-red-700 active:scale-98 text-white font-bold py-3 px-4 rounded-xl shadow-md shadow-red-600/20 transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Hapus Akun & Seluruh Data Toko Permanen</span>
+                </button>
+            </div>
         </section>
     </main>
     <!-- MODAL: Tambah/Edit Produk -->
@@ -3430,14 +3448,18 @@
                         activeDeviceLastSeen: new Date().toISOString()
                     });
                     localStorage.setItem('fortapos_active_device_id', myDeviceId);
-                    showToast('Sesi perangkat berhasil dipindahkan ke perangkat ini!', 'success');
-                    logActivity('Single Device', 'Memindahkan activeDeviceId ke perangkat: ' + myDeviceId);
+                    showToast('Sesi perangkat berhasil diambil alih (Takeover) ke perangkat ini!', 'success');
+                    logActivity('Single Device', 'Memindahkan currentActiveDevice ke perangkat: ' + myDeviceId);
                 } catch (e) {
                     console.warn("Gagal takeover device:", e);
                 }
             }
             hideDeviceLockoutModal();
-            initAppSession();
+            if (isLicenseActive()) {
+                initAppSession();
+            } else {
+                openLicenseModal();
+            }
         }
 
         function applyLicenseRestrictions() {
@@ -4207,14 +4229,38 @@
                 applyLicenseRestrictions();
             }
 
-            // 5. MANAJEMEN SESI MULTI-DEVICE & SESSION COLLISION HANDLING
+            // 5. MANAJEMEN SESI MULTI-DEVICE & VERIFIKASI STATUS PERANGKAT
             const myDeviceId = getOrCreateDeviceId();
-            const activeDev = (foundStore.currentActiveDevice || foundStore.activeDeviceId || "").trim();
-            const isPremium = currentLicense && currentLicense.packageType === 'premium';
 
-            // Verifikasi status perangkat aktif:
-            // a) Jika field perangkat kosong/reset (perangkat sebelumnya sudah logout), atau perangkat yang sama, atau lisensi Premium:
-            if (!activeDev || activeDev === myDeviceId || isPremium) {
+            // Verifikasi status terkini field currentActiveDevice di Firestore sebelum memulai sesi
+            let currentActiveDev = (foundStore.currentActiveDevice || foundStore.activeDeviceId || "").trim();
+            if (isFirebaseConfigured && db && storeId) {
+                try {
+                    const freshDoc = await db.collection('stores').doc(storeId).get();
+                    if (freshDoc.exists) {
+                        const freshData = freshDoc.data();
+                        currentActiveDev = (freshData.currentActiveDevice || freshData.activeDeviceId || "").trim();
+                        if (freshData.license) {
+                            foundStore.license = freshData.license;
+                            currentLicense = freshData.license;
+                            localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
+                            updateLicenseModalCol1UI();
+                            applyLicenseRestrictions();
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Gagal membaca status perangkat terkini Firestore:", err);
+                }
+            }
+
+            const isPremium = currentLicense && currentLicense.packageType === 'premium';
+            const isDeviceFieldEmpty = (!currentActiveDev || currentActiveDev === "");
+            const isSameDevice = (currentActiveDev === myDeviceId);
+
+            // Verifikasi apakah field currentActiveDevice kosong (atau perangkat sama / paket Premium):
+            if (isDeviceFieldEmpty || isSameDevice || isPremium) {
+                // a) FIELD PERANGKAT KOSONG/RESET (perangkat sebelumnya telah logout dengan bersih):
+                // Izinkan perangkat baru membuat sesi aktif
                 if (isFirebaseConfigured && db && storeId) {
                     try {
                         await db.collection('stores').doc(storeId).update({
@@ -4240,15 +4286,18 @@
                     initAppSession();
                 }
             } else {
-                // b) KREDENSIAL VALID TAPI TERJADI SESSION COLLISION:
-                // Akun sedang aktif di perangkat lain pada paket Basic.
-                // UI segera menyediakan aksi remediasi jelas (Takeover option).
+                // b) FIELD TIDAK KOSONG - TERJADI SESSION COLLISION:
+                // Kredensial akun valid, tetapi field currentActiveDevice di Firestore masih aktif di perangkat lain.
+                // CEGAH LOOP REGISTRASI SECARA EKSPLISIT:
+                // Pengguna TIDAK dialihkan ke pendaftaran baru, melainkan diberikan opsi remediasi 'Takeover'
                 playBeep('warning');
                 document.getElementById('authModal').classList.add('hidden');
-                showToast('Kredensial valid. Sesi sedang aktif di perangkat lain. Silakan pilih opsi Takeover.', 'warning');
-                showDeviceLockoutModal(activeDev);
+                showToast('Sesi akun sedang aktif di perangkat lain (' + currentActiveDev + '). Gunakan opsi Takeover untuk mengambil alih sesi.', 'warning');
+                showDeviceLockoutModal(currentActiveDev);
             }
         }
+        
+        
         
         
         
@@ -4414,20 +4463,18 @@
         }
 
         async function logoutApp() {
-            // 1. Kosongkan status active device di Firestore sebelum sign out agar akun terbebas untuk perangkat lain
+            // 1. Pastikan field currentActiveDevice di Firestore di-reset bersih untuk user owner yang terautentikasi
             if (currentUser && currentUser.role === 'owner' && currentStoreId) {
-                const myDeviceId = getOrCreateDeviceId();
-                const wasActiveHere = localStorage.getItem('fortapos_active_device_id') === myDeviceId;
-                if (db && wasActiveHere) {
+                if (db) {
                     try {
                         await db.collection('stores').doc(currentStoreId).update({
                             currentActiveDevice: "",
                             activeDeviceId: "",
                             activeDeviceLastSeen: null
                         });
-                        console.log("Device aktif berhasil di-reset di Firestore sebelum sign out.");
+                        console.log("Field currentActiveDevice berhasil di-reset bersih di Firestore sebelum logout.");
                     } catch (e) {
-                        console.warn("Gagal mengosongkan status device saat logout:", e);
+                        console.warn("Gagal mengosongkan currentActiveDevice saat logout:", e);
                     }
                 }
                 localStorage.removeItem('fortapos_active_device_id');
@@ -4465,13 +4512,25 @@
             return await logoutApp();
         }
 
-        async function handleLogin(e) {
-            return await handleLoginOwner(e);
+        async function handleLogin(eOrCredentials) {
+            if (eOrCredentials && typeof eOrCredentials.preventDefault === 'function') {
+                return await handleLoginOwner(eOrCredentials);
+            }
+            if (eOrCredentials && eOrCredentials.email && eOrCredentials.password) {
+                const emailInput = document.getElementById('ownerLoginEmail');
+                const passInput = document.getElementById('ownerLoginPass');
+                if (emailInput) emailInput.value = eOrCredentials.email;
+                if (passInput) passInput.value = eOrCredentials.password;
+            }
+            const fakeEvent = { preventDefault: () => {} };
+            return await handleLoginOwner(fakeEvent);
         }
 
         window.handleLogOut = handleLogOut;
         window.handleLogin = handleLogin;
         window.logoutApp = logoutApp;
+        
+        
         
         
         
@@ -4921,6 +4980,121 @@
                 showToast('Gagal menyimpan: ' + err.message, 'error');
             }
         }
+
+        function confirmDeleteAccount() {
+            if (!currentUser || currentUser.role !== 'owner') {
+                showToast('Hanya Owner yang memiliki hak akses untuk menghapus akun!', 'error');
+                return;
+            }
+
+            const storeName = dbSettings.storeName || (currentUser ? currentUser.name : 'Toko Anda');
+            showCustomConfirm(
+                'Hapus Akun & Data Toko Permanen?',
+                'PERINGATAN: Apakah Anda yakin ingin menghapus akun dan seluruh data toko "' + storeName + '"? Tindakan ini akan menghapus dokumen toko, stok produk, riwayat transaksi, karyawan, kategori, dan pengaturan secara permanen dari Cloud Firestore dan tidak dapat dipulihkan kembali.',
+                async () => {
+                    await deleteStoreAccountSecurely();
+                }
+            );
+        }
+
+        async function deleteStoreAccountSecurely() {
+            if (!currentUser || currentUser.role !== 'owner') {
+                showToast('Hanya Owner yang berhak menghapus akun toko!', 'error');
+                return;
+            }
+
+            const storeIdToDelete = currentStoreId || currentUser.storeId;
+            const userEmail = (currentUser.email || '').toLowerCase();
+
+            showToast('Menghapus data akun dan toko dari Cloud Firestore...', 'info');
+
+            // 1. Hapus seluruh data di Firestore jika online
+            if (isFirebaseConfigured && db && storeIdToDelete && !currentUser.isDemo) {
+                try {
+                    const storeRef = db.collection('stores').doc(storeIdToDelete);
+
+                    // Fungsi pembantu untuk menghapus dokumen dalam subkoleksi
+                    async function deleteSubcollection(colName) {
+                        try {
+                            const snap = await storeRef.collection(colName).get();
+                            if (!snap.empty) {
+                                const batch = db.batch();
+                                snap.docs.forEach(doc => batch.delete(doc.ref));
+                                await batch.commit();
+                            }
+                        } catch (e) {
+                            console.warn('Gagal menghapus subkoleksi ' + colName + ':', e);
+                        }
+                    }
+
+                    // Hapus subkoleksi data toko secara paralel
+                    await Promise.all([
+                        deleteSubcollection('products'),
+                        deleteSubcollection('transactions'),
+                        deleteSubcollection('employees'),
+                        deleteSubcollection('categories'),
+                        deleteSubcollection('units'),
+                        deleteSubcollection('customers'),
+                        deleteSubcollection('activityLogs'),
+                        deleteSubcollection('backups')
+                    ]);
+
+                    // Hapus dokumen utama toko
+                    await storeRef.delete();
+                    console.log('Dokumen toko ' + storeIdToDelete + ' berhasil dihapus dari Cloud Firestore.');
+                } catch (fbErr) {
+                    console.warn('Gagal menghapus akun dari Firestore:', fbErr);
+                }
+            }
+
+            // 2. Bersihkan akun dari daftar owner lokal di localStorage
+            try {
+                let localOwners = [];
+                const savedOwners = localStorage.getItem('toko_registered_owners');
+                if (savedOwners) {
+                    localOwners = JSON.parse(savedOwners);
+                    localOwners = localOwners.filter(o => 
+                        (o.storeId !== storeIdToDelete) && 
+                        ((o.email || '').toLowerCase() !== userEmail)
+                    );
+                    localStorage.setItem('toko_registered_owners', JSON.stringify(localOwners));
+                }
+            } catch (e) {}
+
+            // 3. Bersihkan data toko dan sesi lokal
+            try {
+                localStorage.removeItem('toko_hj_nurjanah_session');
+                localStorage.removeItem('fortapos_active_device_id');
+                localStorage.removeItem('fortapos_license_data');
+                localStorage.removeItem('toko_hj_nurjanah_db_settings');
+                localStorage.removeItem('toko_hj_nurjanah_products');
+                localStorage.removeItem('toko_hj_nurjanah_transactions');
+                localStorage.removeItem('toko_hj_nurjanah_employees');
+                localStorage.removeItem('toko_hj_nurjanah_customers');
+                localStorage.removeItem('toko_hj_nurjanah_categories');
+                localStorage.removeItem('toko_hj_nurjanah_units');
+                localStorage.removeItem('toko_hj_nurjanah_logs');
+                localStorage.removeItem('toko_demo_products');
+                localStorage.removeItem('toko_demo_transactions');
+                localStorage.removeItem('toko_demo_settings');
+                localStorage.removeItem('toko_demo_employees');
+                localStorage.removeItem('toko_demo_logs');
+                localStorage.removeItem('fortapos_demo_data');
+            } catch (e) {}
+
+            // 4. Putuskan seluruh realtime listener
+            unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
+            unsubscribers = [];
+            currentUser = null;
+
+            showToast('Akun dan seluruh data toko berhasil dihapus secara permanen.', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
+
+        window.confirmDeleteAccount = confirmDeleteAccount;
+        window.deleteStoreAccountSecurely = deleteStoreAccountSecurely;
 
         function loadReceiptFormatToUI() {
             const paperEl = document.getElementById('receiptPaperWidth');
