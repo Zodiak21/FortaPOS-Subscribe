@@ -598,10 +598,17 @@
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
                     <input type="password" id="regPass" required placeholder="••••••••" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm mt-2 flex items-center justify-center space-x-2">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm mt-2 flex items-center justify-center space-x-2 cursor-pointer">
                     <i class="fa-solid fa-store"></i>
                     <span>Daftar & Buat Toko</span>
                 </button>
+                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-center text-xs space-y-1">
+                    <span class="text-[11px] text-slate-600 block">Butuh bantuan pendaftaran toko atau aktivasi lisensi?</span>
+                    <button type="button" onclick="contactAdminRegistrationWhatsapp('bantuan registrasi akun toko baru')" class="text-emerald-700 font-bold hover:text-emerald-800 transition inline-flex items-center justify-center gap-1.5 cursor-pointer text-xs">
+                        <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+                        <span>WhatsApp Admin Registrasi: +62 813-2864-0959</span>
+                    </button>
+                </div>
                 <!-- VERSI APLIKASI DI BAWAH TOMBOL DAFTAR -->
                 <div class="text-center text-[11px] font-mono font-semibold text-slate-400 pt-1 tracking-wider">
                     V1.0.3.19.10.26.MD
@@ -2335,7 +2342,23 @@
                                 <span class="text-[9px] font-normal opacity-90">(365 Hari)</span>
                             </button>
                         </div>
-                        <p class="text-[10px] text-slate-400 text-center">Otomatis membuka WhatsApp dengan format pemesanan paket.</p>
+                        <!-- KARTU NOMOR WHATSAPP ADMIN REGISTRASI RESMI -->
+                        <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs mt-1 shadow-2xs">
+                            <div class="flex items-center space-x-2 truncate pr-1">
+                                <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                                </div>
+                                <div class="truncate">
+                                    <span class="text-[10px] text-slate-500 block font-semibold leading-tight">WhatsApp Admin Registrasi & Lisensi:</span>
+                                    <strong class="text-emerald-800 font-mono text-xs">+62 813-2864-0959</strong>
+                                </div>
+                            </div>
+                            <button type="button" onclick="contactAdminRegistrationWhatsapp('pembelian paket langganan')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                                <i class="fa-brands fa-whatsapp text-xs"></i>
+                                <span>Chat</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-400 text-center">Otomatis membuka WhatsApp Admin (+6281328640959) dengan format pemesanan paket.</p>
                     </div>
                 </div>
 
@@ -2394,6 +2417,21 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- BANTUAN KODE LISENSI ADMIN WHATSAPP -->
+                    <div class="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                        <div class="flex items-center space-x-2 truncate pr-1">
+                            <i class="fa-brands fa-whatsapp text-emerald-600 text-base shrink-0"></i>
+                            <div class="truncate">
+                                <span class="text-[10px] text-slate-500 font-semibold block leading-tight">Belum punya kode? Hubungi Admin Registrasi:</span>
+                                <strong class="text-emerald-800 font-mono text-xs">+62 813-2864-0959</strong>
+                            </div>
+                        </div>
+                        <button type="button" onclick="contactAdminRegistrationWhatsapp('pembelian lisensi resmi')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0">
+                            <i class="fa-brands fa-whatsapp text-xs"></i>
+                            <span>Chat</span>
+                        </button>
                     </div>
 
                     <div class="text-[10px] text-slate-400 text-center leading-relaxed">
@@ -3457,18 +3495,48 @@
             }
         }
 
+        // ==========================================
+        // WHATSAPP ADMIN REGISTRASI & LISENSI RESMI
+        // Nomor WhatsApp Admin: +6281328640959 (+62 813-2864-0959)
+        // ==========================================
+        const FORTAPOS_ADMIN_WHATSAPP = '6281328640959';
+
+        function contactAdminRegistrationWhatsapp(topic = 'registrasi') {
+            const targetPhone = FORTAPOS_ADMIN_WHATSAPP;
+            const storeIdStr = currentStoreId || (currentUser ? currentUser.storeId : '-');
+            const storeNameStr = (dbSettings && dbSettings.storeName) ? dbSettings.storeName : '-';
+            const ownerNameStr = (currentUser && currentUser.name) ? currentUser.name : '';
+            
+            let message = `Halo Admin FortaPOS (+6281328640959), saya ingin bantuan untuk keperluan ${topic} akun toko & lisensi aplikasi FortaPOS Multi-Device.`;
+            if (storeNameStr !== '-' || storeIdStr !== '-') {
+                message += `\nNama Toko: ${storeNameStr}\nStore ID: ${storeIdStr}`;
+            }
+            if (ownerNameStr) {
+                message += `\nNama Owner: ${ownerNameStr}`;
+            }
+            const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
+            showToast(`Membuka WhatsApp Admin Registrasi (+62 813-2864-0959)...`);
+            logActivity('WhatsApp Admin', `Menghubungi WA Admin Registrasi (+6281328640959) untuk keperluan ${topic}.`);
+        }
+
         function orderSubscriptionDuration(durationDays) {
             const pkgName = selectedPurchasePackage === 'premium' ? 'Premium' : 'Basic';
             const durLabel = durationDays === 30 ? '1 Bulan (30 Hari)' : (durationDays === 90 ? '3 Bulan (90 Hari)' : '1 Tahun (365 Hari)');
-            const targetPhone = sanitizeWhatsappNumber(dbSettings.ownerWhatsapp || dbSettings.phone || '6281299887766');
+            const targetPhone = FORTAPOS_ADMIN_WHATSAPP;
+            const storeIdStr = currentStoreId || (currentUser ? currentUser.storeId : 'TOKO BARU');
+            const storeNameStr = (dbSettings && dbSettings.storeName) ? dbSettings.storeName : 'Toko Saya';
             
-            const message = `Halo Admin FortaPOS, saya ingin berlangganan Paket ${pkgName} dengan durasi ${durLabel} untuk akun toko saya.`;
+            const message = `Halo Admin FortaPOS (+6281328640959), saya ingin mendaftar dan berlangganan Paket ${pkgName} dengan durasi ${durLabel}.\nNama Toko: ${storeNameStr}\nStore ID: ${storeIdStr}\nMohon informasi pembayaran dan kode lisensi aktivasinya. Terima kasih.`;
             const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
 
             window.open(waUrl, '_blank');
-            showToast(`Membuka WhatsApp Admin (${targetPhone}) untuk pesanan Paket ${pkgName} ${durLabel}`);
-            logActivity('Lisensi SaaS', `Menghubungi Admin WhatsApp untuk langganan Paket ${pkgName} (${durLabel})`);
+            showToast(`Membuka WhatsApp Admin Registrasi (+62 813-2864-0959) untuk pesanan Paket ${pkgName} (${durLabel})`);
+            logActivity('Lisensi SaaS', `Menghubungi Admin WhatsApp (+6281328640959) untuk pesanan Paket ${pkgName} (${durLabel})`);
         }
+
+        window.contactAdminRegistrationWhatsapp = contactAdminRegistrationWhatsapp;
+        window.orderSubscriptionDuration = orderSubscriptionDuration;
 
         function pasteSampleCodeToInput(code) {
             const input = document.getElementById('licenseCodeInput');
