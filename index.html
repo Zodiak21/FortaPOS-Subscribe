@@ -369,6 +369,48 @@
             background-color: var(--table-hover) !important;
         }
 
+        
+        /* ========================================================= */
+        /* DARK MODE: PENGATURAN FORMAT TULISAN STRUK (WARNA HITAM)  */
+        /* ========================================================= */
+        body.dark-theme #receiptFormatContainer,
+        body.dark #receiptFormatContainer {
+            background-color: #ecfdf5 !important;
+            border-color: #6ee7b7 !important;
+            color: #000000 !important;
+        }
+
+        body.dark-theme #receiptFormatContainer *,
+        body.dark #receiptFormatContainer * {
+            color: #000000 !important;
+        }
+
+        body.dark-theme #receiptFormatContainer label,
+        body.dark #receiptFormatContainer label {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+
+        body.dark-theme #receiptFormatContainer select,
+        body.dark #receiptFormatContainer select,
+        body.dark-theme #receiptFormatContainer input,
+        body.dark #receiptFormatContainer input {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border-color: #94a3b8 !important;
+        }
+
+        body.dark-theme #receiptFormatContainer select option,
+        body.dark #receiptFormatContainer select option {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+        }
+
+        body.dark-theme #receiptFormatContainer input::placeholder,
+        body.dark #receiptFormatContainer input::placeholder {
+            color: #475569 !important;
+        }
+
         body.dark-theme #receiptPreviewContent, body.dark #receiptPreviewContent {
             background-color: #0b111e !important;
             color: #f1f5f9 !important;
@@ -1340,7 +1382,7 @@
                     <i class="fa-solid fa-sliders text-emerald-600"></i><span>Pengaturan Format Tulisan Struk</span>
                 </h2>
 
-                <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-3">
+                <div id="receiptFormatContainer" class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-3">
                     <div class="grid grid-cols-2 gap-3 text-xs">
                         <div>
                             <label class="block font-semibold text-slate-600 mb-1">Lebar Kertas</label>
@@ -1517,36 +1559,7 @@
                 </div>
             </div>
 
-                        <!-- KARTU KONFIGURASI FIREBASE CLOUD (DEVELOPER / OWNER) -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 md:col-span-2 max-w-xl mx-auto w-full">
-                <div class="flex justify-between items-center border-b pb-3">
-                    <h2 class="font-bold text-slate-800 flex items-center space-x-2 text-sm">
-                        <i class="fa-solid fa-fire text-amber-500"></i>
-                        <span>Konfigurasi Firebase Firestore Cloud</span>
-                    </h2>
-                    <span id="settingFirebaseStatusBadge" class="text-[11px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold">Cloud Aktif</span>
-                </div>
-                <p class="text-xs text-slate-600 leading-relaxed">
-                    Tempelkan objek <code>firebaseConfig</code> project Firestore Anda untuk sinkronisasi multi-device, katalog stok, lisensi, dan riwayat transaksi secara real-time.
-                </p>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Objek JSON firebaseConfig (apiKey, projectId, appId):</label>
-                        <textarea id="settingFirebaseConfigInput" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-mono bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
-                    </div>
-                    <div class="flex items-center justify-between gap-2">
-                        <button type="button" onclick="saveFirebaseConfigFromUI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs flex items-center justify-center space-x-1.5 cursor-pointer">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span>Simpan & Hubungkan Firebase</span>
-                        </button>
-                        <button type="button" onclick="resetFirebaseConfigToDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 px-3 rounded-xl transition text-xs cursor-pointer">
-                            Reset Default
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KARTU HAPUS AKUN & DATA TOKO (DANGER ZONE) -->
+                        <!-- KARTU HAPUS AKUN & DATA TOKO (DANGER ZONE) -->
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-red-200 space-y-4 md:col-span-2 max-w-xl mx-auto w-full">
                 <div class="flex justify-between items-center border-b border-red-100 pb-3">
                     <h2 class="font-bold text-red-700 flex items-center space-x-2 text-sm">
@@ -2219,6 +2232,18 @@
                                 <span id="licenseActivePackageName" class="text-sm font-bold text-slate-800">Belum Ada Paket Aktif</span>
                             </div>
 
+                            <!-- Informasi Pemilik Lisensi & Store ID (Persyaratan 1) -->
+                            <div class="grid grid-cols-2 gap-2 text-xs">
+                                <div class="p-2.5 bg-white rounded-xl border border-slate-200">
+                                    <span class="text-[10px] text-slate-400 block font-medium">Nama Pemilik:</span>
+                                    <span id="licenseOwnerNameText" class="font-bold text-slate-700 text-[11px] truncate block">-</span>
+                                </div>
+                                <div class="p-2.5 bg-white rounded-xl border border-slate-200">
+                                    <span class="text-[10px] text-slate-400 block font-medium">Store ID:</span>
+                                    <span id="licenseStoreIdText" class="font-bold text-slate-700 font-mono text-[11px] truncate block">-</span>
+                                </div>
+                            </div>
+
                             <div class="grid grid-cols-2 gap-2 text-xs">
                                 <div class="p-2.5 bg-white rounded-xl border border-slate-200">
                                     <span class="text-[10px] text-slate-400 block font-medium">Awal Aktivasi:</span>
@@ -2380,23 +2405,23 @@
                         </form>
 
                         <!-- Kotak Kode Lisensi Contoh (Siap Uji) -->
-                        <div class="mt-3.5 p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+                        <div id="sampleLicenseBox" class="mt-3.5 p-3 bg-white rounded-xl border border-slate-200 space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
                                     <i class="fa-solid fa-flask text-emerald-600"></i>
                                     <span>Kode Lisensi Contoh (Siap Uji - 3 Hari)</span>
                                 </span>
-                                <span class="text-[9px] text-slate-400">Klik untuk isi</span>
+                                <span id="sampleLicenseNotice" class="text-[9px] text-slate-400">Klik untuk isi</span>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-BASIC-3D')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
+                                <button type="button" id="sampleBtnBasic" onclick="pasteSampleCodeToInput('FORTA-BASIC-3D')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
                                     <div class="flex items-center justify-between">
                                         <span class="font-mono font-extrabold text-[11px] text-slate-800 group-hover:text-emerald-700 block">FORTA-BASIC-3D</span>
                                         <span class="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full">3 Hari</span>
                                     </div>
                                     <span class="text-[10px] text-emerald-700 font-semibold mt-0.5 block">Uji Coba Fitur Basic (3 Hari)</span>
                                 </button>
-                                <button type="button" onclick="pasteSampleCodeToInput('FORTA-PREMIUM-3D')" class="p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
+                                <button type="button" id="sampleBtnPremium" onclick="pasteSampleCodeToInput('FORTA-PREMIUM-3D')" class="p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-left transition cursor-pointer shadow-2xs group">
                                     <div class="flex items-center justify-between">
                                         <span class="font-mono font-extrabold text-[11px] text-indigo-900 group-hover:text-indigo-700 block">FORTA-PREMIUM-3D</span>
                                         <span class="text-[9px] bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.2 rounded-full">3 Hari</span>
@@ -2534,16 +2559,19 @@
         // tinggal menempelkan API Key / kredensial Firebase project mereka secara langsung.
         // Konfigurasi juga dapat dimasukkan melalui menu "Pengaturan Toko -> Konfigurasi Firebase".
         // ==========================================
+                // ==========================================
+        // FIREBASE CONFIGURATION (Multi-Device Firestore Internal)
+        // Berjalan di latar belakang menggunakan config internal
+        // ==========================================
         let firebaseConfig = {
             apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
-  authDomain: "fortaappsubscribe.firebaseapp.com",
-  projectId: "fortaappsubscribe",
-  storageBucket: "fortaappsubscribe.firebasestorage.app",
-  messagingSenderId: "935859426439",
-  appId: "1:935859426439:web:e5c43eed974f1606e61422"
+            authDomain: "fortaappsubscribe.firebaseapp.com",
+            projectId: "fortaappsubscribe",
+            storageBucket: "fortaappsubscribe.firebasestorage.app",
+            messagingSenderId: "935859426439",
+            appId: "1:935859426439:web:e5c43eed974f1606e61422"
         };
 
-        // Kredensial cadangan / tersimpan di localStorage dari Pengaturan Toko UI
         try {
             const savedCustomFb = localStorage.getItem('fortapos_custom_firebase_config');
             if (savedCustomFb) {
@@ -2551,16 +2579,6 @@
                 if (parsedFb && parsedFb.apiKey && parsedFb.projectId) {
                     firebaseConfig = parsedFb;
                 }
-            } else if (!firebaseConfig.apiKey) {
-                // Preset default project jika belum dikonfigurasi manual
-                firebaseConfig = {
-                    apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
-                    authDomain: "fortaappsubscribe.firebaseapp.com",
-                    projectId: "fortaappsubscribe",
-                    storageBucket: "fortaappsubscribe.firebasestorage.app",
-                    messagingSenderId: "935859426439",
-                    appId: "1:935859426439:web:e5c43eed974f1606e61422"
-                };
             }
         } catch (e) {}
 
@@ -2653,7 +2671,14 @@
             { code: 'FORTA-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
             { code: 'FORTA-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true },
             { code: 'TRIAL-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
-            { code: 'TRIAL-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true }
+            { code: 'TRIAL-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true },
+            // Kode Lisensi Berlangganan Resmi (Basic & Premium)
+            { code: 'FORTA-BASIC-30D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 30, isUsed: false, isUniversalTrial: false },
+            { code: 'FORTA-BASIC-90D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 90, isUsed: false, isUniversalTrial: false },
+            { code: 'FORTA-BASIC-365D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 365, isUsed: false, isUniversalTrial: false },
+            { code: 'FORTA-PREMIUM-30D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 30, isUsed: false, isUniversalTrial: false },
+            { code: 'FORTA-PREMIUM-90D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 90, isUsed: false, isUniversalTrial: false },
+            { code: 'FORTA-PREMIUM-365D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 365, isUsed: false, isUniversalTrial: false }
         ];
 
         const DEFAULT_SEED_PRODUCTS = [
@@ -3011,6 +3036,19 @@
             return new Date(currentLicense.expiresAt) > new Date();
         }
 
+        // Fungsi Helper: Cek apakah akun sedang dalam status aktif berlangganan secara resmi/sah (bukan trial/kosong)
+        function isOfficiallySubscribed() {
+            if (!currentLicense) return false;
+            if (currentLicense.status !== 'active') return false;
+            if (currentLicense.isTrial === true) return false;
+            const code = (currentLicense.code || '').toUpperCase();
+            if (code.includes('TRIAL') || code.endsWith('-3D') || code === 'FORTA-BASIC-3D' || code === 'FORTA-PREMIUM-3D' || code === 'TRIAL-BASIC-7D') {
+                return false;
+            }
+            if (!currentLicense.expiresAt) return false;
+            return new Date(currentLicense.expiresAt) > new Date();
+        }
+
         function openLicenseModal(options = {}) {
             const modal = document.getElementById('licenseModal');
             if (!modal) return;
@@ -3042,6 +3080,8 @@
         function updateLicenseModalCol1UI() {
             const statusPill = document.getElementById('licenseStatusPill');
             const pkgNameEl = document.getElementById('licenseActivePackageName');
+            const ownerNameEl = document.getElementById('licenseOwnerNameText');
+            const storeIdEl = document.getElementById('licenseStoreIdText');
             const startEl = document.getElementById('licenseStartDateText');
             const expEl = document.getElementById('licenseExpiryDateText');
             const featDevice = document.getElementById('featDeviceSummary');
@@ -3049,10 +3089,16 @@
             const featBackup = document.getElementById('featBackupSummary');
             const trialSection = document.getElementById('trialActivationSection');
 
+            const sampleNotice = document.getElementById('sampleLicenseNotice');
+            const sampleBtnBasic = document.getElementById('sampleBtnBasic');
+            const sampleBtnPremium = document.getElementById('sampleBtnPremium');
+            const sampleBox = document.getElementById('sampleLicenseBox');
+
             const isActive = isLicenseActive();
+            const isSubscribed = isOfficiallySubscribed();
             const pkgType = (currentLicense && currentLicense.packageType) || 'none';
             const isPremium = pkgType === 'premium';
-            const isTrial = currentLicense && currentLicense.status === 'trial';
+            const isTrial = currentLicense && (currentLicense.status === 'trial' || currentLicense.isTrial === true);
 
             if (isActive) {
                 if (statusPill) {
@@ -3062,7 +3108,7 @@
                     statusPill.innerText = isTrial ? 'Percobaan Aktif' : 'Aktif Berlangganan';
                 }
                 if (pkgNameEl) {
-                    pkgNameEl.innerText = isPremium ? 'Paket FortaPOS Premium' : (isTrial ? 'Paket Basic (Masa Percobaan 7 Hari)' : 'Paket FortaPOS Basic');
+                    pkgNameEl.innerText = isPremium ? 'Paket FortaPOS Premium' : (isTrial ? (currentLicense.packageName || 'Paket Basic (Masa Percobaan 7 Hari)') : 'Paket FortaPOS Basic');
                 }
                 if (startEl) {
                     startEl.innerText = currentLicense.activatedAt ? new Date(currentLicense.activatedAt).toLocaleDateString('id-ID') : '-';
@@ -3090,6 +3136,55 @@
                 if (trialSection) trialSection.classList.remove('hidden');
             }
 
+            // PERUBAHAN 1: Tampilkan Informasi Nama Pemilik & Store ID hanya jika SUDAH berlangganan sah
+            if (isSubscribed) {
+                const ownerName = currentLicense.ownerName || (currentUser ? (currentUser.name || currentUser.ownerName) : '') || dbSettings.ownerName || 'Owner';
+                const storeId = currentLicense.storeId || currentStoreId || (currentUser ? currentUser.storeId : '') || '-';
+                if (ownerNameEl) ownerNameEl.innerText = ownerName;
+                if (storeIdEl) storeIdEl.innerText = storeId;
+            } else {
+                if (ownerNameEl) ownerNameEl.innerText = '-';
+                if (storeIdEl) storeIdEl.innerText = '-';
+            }
+
+            // PERUBAHAN 2: Penguncian Fitur Kode Lisensi Contoh (Trial Bypass Protection)
+            if (isSubscribed) {
+                if (sampleNotice) {
+                    sampleNotice.innerHTML = '<span class="text-rose-600 font-bold flex items-center gap-1"><i class="fa-solid fa-lock text-[8px]"></i>Terkunci (Akun Resmi)</span>';
+                }
+                if (sampleBtnBasic) {
+                    sampleBtnBasic.disabled = true;
+                    sampleBtnBasic.removeAttribute('onclick');
+                    sampleBtnBasic.className = 'p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-left opacity-40 cursor-not-allowed shadow-none select-none';
+                }
+                if (sampleBtnPremium) {
+                    sampleBtnPremium.disabled = true;
+                    sampleBtnPremium.removeAttribute('onclick');
+                    sampleBtnPremium.className = 'p-2.5 bg-slate-100 border border-slate-200 rounded-xl text-left opacity-40 cursor-not-allowed shadow-none select-none';
+                }
+                if (sampleBox) {
+                    sampleBox.classList.add('opacity-75');
+                }
+            } else {
+                if (sampleNotice) {
+                    sampleNotice.innerText = 'Klik untuk isi';
+                    sampleNotice.className = 'text-[9px] text-slate-400';
+                }
+                if (sampleBtnBasic) {
+                    sampleBtnBasic.disabled = false;
+                    sampleBtnBasic.setAttribute('onclick', "pasteSampleCodeToInput('FORTA-BASIC-3D')");
+                    sampleBtnBasic.className = 'p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-left transition cursor-pointer shadow-2xs group';
+                }
+                if (sampleBtnPremium) {
+                    sampleBtnPremium.disabled = false;
+                    sampleBtnPremium.setAttribute('onclick', "pasteSampleCodeToInput('FORTA-PREMIUM-3D')");
+                    sampleBtnPremium.className = 'p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-left transition cursor-pointer shadow-2xs group';
+                }
+                if (sampleBox) {
+                    sampleBox.classList.remove('opacity-75');
+                }
+            }
+
             if (featDevice) {
                 featDevice.innerHTML = isPremium 
                     ? `<i class="fa-solid fa-circle-check text-emerald-500"></i><span>Akses: <strong class="text-slate-900 font-bold">Multi-Device Penuh</strong></span>` 
@@ -3108,7 +3203,6 @@
 
             updateNavLicenseBadge();
         }
-
         function updateNavLicenseBadge() {
             const badge = document.getElementById('navLicenseBadge');
             const text = document.getElementById('navLicenseText');
@@ -3205,6 +3299,12 @@
         }
 
         function pasteSampleCodeToInput(code) {
+            // Penguncian Fitur Kode Lisensi Contoh: Blokir jika sudah aktif berlangganan
+            if (isOfficiallySubscribed()) {
+                playBeep('error');
+                showToast('Akun Anda sudah aktif berlangganan resmi. Kode uji coba contoh tidak berlaku dan tidak dapat digunakan lagi!', 'error');
+                return;
+            }
             const input = document.getElementById('licenseCodeInput');
             if (input) {
                 input.value = code;
@@ -3236,12 +3336,26 @@
             await activateLicense(code);
         }
 
-                async function activateLicense(code) {
+        async function activateLicense(code) {
             // Bersihkan input kode lisensi dari spasi berlebih dan format huruf kapital
             const cleanCode = (code || '').trim().replace(/\s+/g, '').toUpperCase();
             if (!cleanCode) {
                 playBeep('error');
                 showLicenseErrorPopup('masukkan kode yang benar');
+                return;
+            }
+
+            const isSubscribed = isOfficiallySubscribed();
+
+            // Deteksi kode lisensi uji coba (3 hari) universal
+            const isTrialBasic = cleanCode === 'FORTA-BASIC-3D' || cleanCode === 'TRIAL-BASIC-3D';
+            const isTrialPremium = cleanCode === 'FORTA-PREMIUM-3D' || cleanCode === 'TRIAL-PREMIUM-3D';
+            const isUniversalTrial = isTrialBasic || isTrialPremium || cleanCode.endsWith('-3D') || cleanCode.includes('TRIAL');
+
+            // PERUBAHAN 2: Penguncian Fitur Kode Lisensi Contoh (Trial Bypass Protection)
+            if (isUniversalTrial && isSubscribed) {
+                playBeep('error');
+                showToast('Akun Anda sudah aktif berlangganan resmi. Kode lisensi contoh uji coba tidak berlaku lagi dan tidak dapat digunakan!', 'error');
                 return;
             }
 
@@ -3252,11 +3366,6 @@
             }
 
             try {
-                // Deteksi kode lisensi uji coba (3 hari) universal
-                const isTrialBasic = cleanCode === 'FORTA-BASIC-3D' || cleanCode === 'TRIAL-BASIC-3D';
-                const isTrialPremium = cleanCode === 'FORTA-PREMIUM-3D' || cleanCode === 'TRIAL-PREMIUM-3D';
-                const isUniversalTrial = isTrialBasic || isTrialPremium || cleanCode.endsWith('-3D') || cleanCode.includes('TRIAL-3D');
-
                 let licenseDocData = null;
 
                 if (isUniversalTrial) {
@@ -3314,13 +3423,54 @@
                 }
 
                 // Tentukan durasi & tipe paket dari data lisensi atau inferensi kode
-                const durationDays = isUniversalTrial ? 3 : (Number(licenseDocData.durationDays) || (cleanCode.includes('365') ? 365 : cleanCode.includes('90') ? 90 : 30));
-                const packageType = (licenseDocData.packageType || (cleanCode.includes('PREM') ? 'premium' : 'basic')).toLowerCase();
-                const packageName = licenseDocData.packageName || (packageType === 'premium' ? 'Paket Premium' : 'Paket Basic');
+                const newDurationDays = isUniversalTrial ? 3 : (Number(licenseDocData.durationDays) || (cleanCode.includes('365') ? 365 : cleanCode.includes('90') ? 90 : 30));
+                const newPackageType = (licenseDocData.packageType || (cleanCode.includes('PREM') ? 'premium' : 'basic')).toLowerCase();
+                const newPackageName = licenseDocData.packageName || (newPackageType === 'premium' ? 'Paket Premium' : 'Paket Basic');
+
+                // ==============================================================
+                // PERUBAHAN 3: LOGIKA AKUMULASI DURASI LISENSI & KONTROL PINDAH PAKET
+                // ==============================================================
+                const currentExpiresDate = (currentLicense && currentLicense.expiresAt) ? new Date(currentLicense.expiresAt) : null;
+                const isCurrentlyActive = currentLicense && (currentLicense.status === 'active' || currentLicense.status === 'trial') && currentExpiresDate && (currentExpiresDate.getTime() > Date.now());
+
+                let finalExpiresAt = null;
+                let finalActivatedAt = null;
+                let finalDurationDays = newDurationDays;
+                let isAccumulating = false;
+                let remainingDays = 0;
+
+                if (isSubscribed && isCurrentlyActive) {
+                    const currentPkgType = (currentLicense.packageType || 'basic').toLowerCase();
+                    const msRemaining = Math.max(0, currentExpiresDate.getTime() - Date.now());
+                    remainingDays = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+
+                    // Syarat 2 (Pindah Paket): Ditolak jika jenis paket berbeda dan paket saat ini masih aktif
+                    if (newPackageType !== currentPkgType) {
+                        playBeep('error');
+                        const activePkgLabel = currentLicense.packageName || (currentPkgType === 'premium' ? 'Paket Premium' : 'Paket Basic');
+                        showToast(`Peringatan: Tidak dapat berpindah jenis paket! Anda saat ini masih aktif di ${activePkgLabel} (sisa ${remainingDays} hari). Pindah jenis paket hanya diperbolehkan setelah paket yang saat ini aktif benar-benar habis durasinya (mencapai tanggal kedaluwarsa atau sisa 0 hari).`, 'error');
+                        return;
+                    }
+
+                    // Syarat 1 (Paket Sama): Akumulasikan durasi lama + baru dan majukan tanggal kedaluwarsa secara otomatis
+                    isAccumulating = true;
+                    finalDurationDays = remainingDays + newDurationDays;
+                    const newExpiryMs = currentExpiresDate.getTime() + (newDurationDays * 24 * 60 * 60 * 1000);
+                    const newExpiresDate = new Date(newExpiryMs);
+                    finalExpiresAt = newExpiresDate.toISOString();
+                    finalActivatedAt = currentLicense.activatedAt || new Date().toISOString();
+                } else {
+                    // Belum berlangganan resmi, atau masih masa trial, atau paket sebelumnya sudah habis (0 hari)
+                    const now = new Date();
+                    finalExpiresAt = new Date(now.getTime() + (newDurationDays * 24 * 60 * 60 * 1000)).toISOString();
+                    finalActivatedAt = now.toISOString();
+                    finalDurationDays = newDurationDays;
+                    isAccumulating = false;
+                }
 
                 const now = new Date();
-                const expiresAt = new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000)).toISOString();
                 const activeStoreTarget = currentStoreId || (currentUser ? currentUser.storeId : 'STORE');
+                const ownerNameVal = (currentUser ? (currentUser.name || currentUser.ownerName) : '') || dbSettings.ownerName || 'Owner';
 
                 // 3. Ubah status isUsed menjadi true dan isi usedByStoreId di Firestore
                 if (isFirebaseConfigured && db) {
@@ -3328,8 +3478,8 @@
                         if (isUniversalTrial) {
                             await db.collection('licenses').doc(cleanCode).set({
                                 code: cleanCode,
-                                packageType,
-                                packageName,
+                                packageType: newPackageType,
+                                packageName: newPackageName,
                                 durationDays: 3,
                                 isUniversalTrial: true,
                                 isUsed: false,
@@ -3343,7 +3493,7 @@
                                 isUsed: true,
                                 usedByStoreId: activeStoreTarget,
                                 activatedAt: now.toISOString(),
-                                expiresAt: expiresAt
+                                expiresAt: finalExpiresAt
                             }, { merge: true });
                         }
 
@@ -3351,13 +3501,15 @@
                             await db.collection('stores').doc(currentStoreId).update({
                                 'license': {
                                     code: cleanCode,
-                                    packageType,
-                                    packageName,
-                                    durationDays,
+                                    packageType: newPackageType,
+                                    packageName: newPackageName,
+                                    durationDays: finalDurationDays,
                                     status: 'active',
                                     isTrial: isUniversalTrial,
-                                    activatedAt: now.toISOString(),
-                                    expiresAt: expiresAt
+                                    activatedAt: finalActivatedAt,
+                                    expiresAt: finalExpiresAt,
+                                    ownerName: ownerNameVal,
+                                    storeId: activeStoreTarget
                                 }
                             });
                         }
@@ -3369,13 +3521,15 @@
                 // 4. PERBARUI STATUS PAKET DI LOCALSTORAGE & MEMORI SAAT ITU JUGA TANPA RELOAD HALAMAN
                 currentLicense = {
                     code: cleanCode,
-                    packageType,
-                    packageName,
-                    durationDays,
+                    packageType: newPackageType,
+                    packageName: newPackageName,
+                    durationDays: finalDurationDays,
                     status: 'active',
                     isTrial: isUniversalTrial,
-                    activatedAt: now.toISOString(),
-                    expiresAt: expiresAt
+                    activatedAt: finalActivatedAt,
+                    expiresAt: finalExpiresAt,
+                    ownerName: ownerNameVal,
+                    storeId: activeStoreTarget
                 };
                 localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
 
@@ -3399,9 +3553,16 @@
                 // 5. UPDATE INSTANT TAMPILAN KASIR & FITUR SECARA REAL-TIME
                 playBeep('success');
                 triggerHapticFeedback(90);
-                const trialBadge = isUniversalTrial ? ' (Uji Coba 3 Hari)' : ` (${durationDays} Hari)`;
-                showToast(`Lisensi ${packageName}${trialBadge} BERHASIL DIAKTIFKAN!`, 'success');
-                logActivity('Aktivasi Lisensi', `Mengaktifkan lisensi ${packageName} (${cleanCode}) masa aktif ${durationDays} hari.`);
+
+                if (isAccumulating) {
+                    const expFormatted = new Date(finalExpiresAt).toLocaleDateString('id-ID');
+                    showToast(`Akumulasi durasi berhasil! Sisa paket lama ${remainingDays} hari + lisensi baru ${newDurationDays} hari = otomatis menjadi ${finalDurationDays} hari (${newPackageName}). Akhir paket diperpanjang hingga ${expFormatted}.`, 'success');
+                    logActivity('Aktivasi Lisensi', `Akumulasi durasi lisensi ${newPackageName} (+${newDurationDays} hari, total: ${finalDurationDays} hari).`);
+                } else {
+                    const trialBadge = isUniversalTrial ? ' (Uji Coba 3 Hari)' : ` (${newDurationDays} Hari)`;
+                    showToast(`Lisensi ${newPackageName}${trialBadge} BERHASIL DIAKTIFKAN!`, 'success');
+                    logActivity('Aktivasi Lisensi', `Mengaktifkan lisensi ${newPackageName} (${cleanCode}) masa aktif ${newDurationDays} hari.`);
+                }
 
                 updateLicenseModalCol1UI();
                 applyLicenseRestrictions();
@@ -3426,9 +3587,18 @@
         }
 
         async function activateTrialPackage() {
+            // Penguncian Fitur Percobaan: Cegah jika sudah aktif berlangganan resmi
+            if (isOfficiallySubscribed()) {
+                playBeep('error');
+                showToast('Akun Anda sudah aktif berlangganan resmi. Masa percobaan tidak dapat digunakan lagi.', 'error');
+                return;
+            }
+
             const now = new Date();
             const durationDays = 7;
             const expiresAt = new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000)).toISOString();
+            const ownerNameVal = (currentUser ? (currentUser.name || currentUser.ownerName) : '') || dbSettings.ownerName || 'Owner';
+            const activeStoreTarget = currentStoreId || (currentUser ? currentUser.storeId : '') || 'STORE';
 
             currentLicense = {
                 code: 'TRIAL-BASIC-7D',
@@ -3436,8 +3606,11 @@
                 packageName: 'Paket Basic (Masa Percobaan 7 Hari)',
                 durationDays,
                 status: 'trial',
+                isTrial: true,
                 activatedAt: now.toISOString(),
-                expiresAt: expiresAt
+                expiresAt: expiresAt,
+                ownerName: ownerNameVal,
+                storeId: activeStoreTarget
             };
 
             localStorage.setItem('fortapos_license_data', JSON.stringify(currentLicense));
@@ -4712,54 +4885,7 @@
             location.reload();
         }
 
-        // ==========================================
-        // KONFIGURASI FIREBASE CLOUD DARI UI PENGATURAN
-        // ==========================================
-        function saveFirebaseConfigFromUI() {
-            const input = document.getElementById('settingFirebaseConfigInput');
-            if (!input || !input.value.trim()) {
-                showToast('Masukkan konfigurasi Firebase!', 'error');
-                return;
-            }
-            try {
-                let parsed;
-                const val = input.value.trim();
-                if (val.startsWith('{')) {
-                    parsed = JSON.parse(val);
-                } else {
-                    const match = val.match(/\{[\s\S]*\}/);
-                    if (match) parsed = JSON.parse(match[0]);
-                    else throw new Error("Format JSON tidak valid");
-                }
-
-                if (!parsed.apiKey || !parsed.projectId) {
-                    showToast('Konfigurasi harus menyertakan apiKey dan projectId!', 'error');
-                    return;
-                }
-
-                localStorage.setItem('fortapos_custom_firebase_config', JSON.stringify(parsed));
-                firebaseConfig = parsed;
-
-                const ok = initFirebaseApp(firebaseConfig);
-                if (ok) {
-                    showToast('Konfigurasi Firebase berhasil disimpan dan terhubung!', 'success');
-                    logActivity('Konfigurasi Firebase', 'Memperbarui konfigurasi Firebase Firestore Cloud dari UI.');
-                    if (currentUser) {
-                        initAppSession();
-                    }
-                } else {
-                    showToast('Konfigurasi tersimpan, namun koneksi Firebase gagal.', 'warning');
-                }
-            } catch (err) {
-                showToast('Format JSON konfigurasi tidak valid: ' + err.message, 'error');
-            }
-        }
-
-        function resetFirebaseConfigToDefault() {
-            localStorage.removeItem('fortapos_custom_firebase_config');
-            showToast('Konfigurasi Firebase kustom direset.');
-            location.reload();
-        }
+        
 
         async function handleLogOut() {
             return await logoutApp();
@@ -5205,19 +5331,6 @@
             if (navName) navName.innerText = dbSettings.storeName || 'Nama Toko';
             updateBackupUI();
             bindShopNameInputListener();
-
-            // Populate Firebase configuration UI input
-            const fbInput = document.getElementById('settingFirebaseConfigInput');
-            if (fbInput) {
-                const savedCustomFb = localStorage.getItem('fortapos_custom_firebase_config');
-                if (savedCustomFb) {
-                    fbInput.value = savedCustomFb;
-                } else if (firebaseConfig && firebaseConfig.apiKey) {
-                    fbInput.value = JSON.stringify(firebaseConfig, null, 2);
-                } else {
-                    fbInput.value = '';
-                }
-            }
             updateFirebaseStatusUI();
         }
 
