@@ -598,17 +598,10 @@
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
                     <input type="password" id="regPass" required placeholder="••••••••" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none">
                 </div>
-                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm mt-2 flex items-center justify-center space-x-2 cursor-pointer">
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-sm mt-2 flex items-center justify-center space-x-2">
                     <i class="fa-solid fa-store"></i>
                     <span>Daftar & Buat Toko</span>
                 </button>
-                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 text-center text-xs space-y-1">
-                    <span class="text-[11px] text-slate-600 block">Butuh bantuan pendaftaran toko atau aktivasi lisensi?</span>
-                    <button type="button" onclick="contactAdminRegistrationWhatsapp('bantuan registrasi akun toko baru')" class="text-emerald-700 font-bold hover:text-emerald-800 transition inline-flex items-center justify-center gap-1.5 cursor-pointer text-xs">
-                        <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
-                        <span>WhatsApp Admin Registrasi: +62 813-2864-0959</span>
-                    </button>
-                </div>
                 <!-- VERSI APLIKASI DI BAWAH TOMBOL DAFTAR -->
                 <div class="text-center text-[11px] font-mono font-semibold text-slate-400 pt-1 tracking-wider">
                     V1.0.3.19.10.26.MD
@@ -657,11 +650,11 @@
                     <span id="themeToggleText" class="hidden md:inline text-[11px] font-medium">Terang</span>
                 </button>
 
-                <!-- Firebase Connection Status & Offline Sync Badge -->
-                <button type="button" id="headerFirebaseBadge" onclick="triggerManualSyncFromBadge()" class="header-status-badge flex items-center space-x-1 sm:space-x-1.5 bg-emerald-800/80 hover:bg-emerald-700 px-2.5 py-1.5 rounded-full text-[10px] sm:text-xs border border-emerald-600 transition shrink-0 cursor-pointer" title="Status Koneksi & Antrean Sinkronisasi (Klik untuk Sinkronisasi)">
+                <!-- Firebase Connection Status Badge (Display Only) -->
+                <div id="headerFirebaseBadge" class="header-status-badge flex items-center space-x-1 sm:space-x-1.5 bg-emerald-800/80 px-2.5 py-1.5 rounded-full text-[10px] sm:text-xs border border-emerald-600 transition shrink-0" title="Status Cloud Firebase Firestore">
                     <span id="firebaseStatusDot" class="status-dot w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 inline-block shadow"></span>
                     <span id="firebaseStatusText">Cloud Aktif</span>
-                </button>
+                </div>
 
                 <!-- E2E Encryption Status Badge -->
                 <div id="headerE2eBadge" onclick="openE2eSecurityModal()" class="hidden md:flex items-center space-x-1.5 bg-emerald-800/80 hover:bg-emerald-700 px-3 py-1.5 rounded-full text-xs border border-emerald-600 transition cursor-pointer shrink-0" title="Enkripsi End-to-End AES-GCM 256-bit Aktif (Klik untuk Info)">
@@ -711,21 +704,6 @@
             </button>
         </nav>
     </header>
-
-    <!-- BANNER PERINGATAN KASIR KETIKA LISENSI BELUM AKTIF -->
-    <div id="licenseInactiveBanner" class="hidden bg-gradient-to-r from-rose-600 via-amber-600 to-rose-700 text-white text-xs font-semibold px-4 py-2.5 flex flex-wrap items-center justify-between shadow-md z-40 border-b border-rose-800 no-print">
-        <div class="flex items-center space-x-2.5">
-            <span class="bg-white/20 text-white px-2 py-0.5 rounded-full text-[10px] uppercase font-bold tracking-wider flex items-center gap-1 shadow-xs">
-                <i class="fa-solid fa-lock"></i>
-                <span>Lisensi Belum Aktif</span>
-            </span>
-            <span id="licenseInactiveBannerText">Akses kasir utama terkunci. Silakan pilih paket langganan atau aktifkan uji coba 7 hari untuk mulai transaksi kasir.</span>
-        </div>
-        <button type="button" onclick="openLicenseModal()" class="bg-white text-rose-900 hover:bg-amber-100 px-3.5 py-1 rounded-xl text-xs font-extrabold transition cursor-pointer shadow-xs shrink-0 flex items-center gap-1.5 mt-1 sm:mt-0">
-            <i class="fa-solid fa-crown text-amber-500"></i>
-            <span>Buka Menu Lisensi</span>
-        </button>
-    </div>
 
     <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
         <!-- 1. HALAMAN TRANSAKSI -->
@@ -1471,15 +1449,6 @@
                                 <input type="checkbox" id="settingAutoDailyCloudBackup" checked class="rounded text-emerald-600 focus:ring-emerald-500">
                                 <span>Pencadangan cloud database otomatis setiap hari (Enkripsi End-to-End)</span>
                             </label>
-                            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100">
-                                <label class="flex items-center space-x-2 text-xs font-medium text-slate-700 cursor-pointer">
-                                    <input type="checkbox" id="settingDailyPushReminder" checked class="rounded text-emerald-600 focus:ring-emerald-500">
-                                    <span>Notifikasi Pengingat Harian (Push Notification Buka/Tutup Kasir & Peringatan Stok)</span>
-                                </label>
-                                <button type="button" onclick="testPushNotificationDirectly()" class="text-[11px] bg-slate-100 hover:bg-emerald-50 text-emerald-700 border border-slate-300 hover:border-emerald-300 font-bold px-2.5 py-1 rounded-lg transition cursor-pointer shrink-0">
-                                    <i class="fa-solid fa-bell mr-1 text-amber-500"></i>Uji Coba Push
-                                </button>
-                            </div>
                         </div>
                     </div>
 
@@ -1545,6 +1514,35 @@
                         <i class="fa-solid fa-rotate-left"></i>
                         <span>Pulihkan Data</span>
                     </button>
+                </div>
+            </div>
+
+                        <!-- KARTU KONFIGURASI FIREBASE CLOUD (DEVELOPER / OWNER) -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 md:col-span-2 max-w-xl mx-auto w-full">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h2 class="font-bold text-slate-800 flex items-center space-x-2 text-sm">
+                        <i class="fa-solid fa-fire text-amber-500"></i>
+                        <span>Konfigurasi Firebase Firestore Cloud</span>
+                    </h2>
+                    <span id="settingFirebaseStatusBadge" class="text-[11px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold">Cloud Aktif</span>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Tempelkan objek <code>firebaseConfig</code> project Firestore Anda untuk sinkronisasi multi-device, katalog stok, lisensi, dan riwayat transaksi secara real-time.
+                </p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Objek JSON firebaseConfig (apiKey, projectId, appId):</label>
+                        <textarea id="settingFirebaseConfigInput" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full p-2.5 border border-slate-300 rounded-xl text-xs font-mono bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+                    <div class="flex items-center justify-between gap-2">
+                        <button type="button" onclick="saveFirebaseConfigFromUI()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs flex items-center justify-center space-x-1.5 cursor-pointer">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Simpan & Hubungkan Firebase</span>
+                        </button>
+                        <button type="button" onclick="resetFirebaseConfigToDefault()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold py-2.5 px-3 rounded-xl transition text-xs cursor-pointer">
+                            Reset Default
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -2325,7 +2323,7 @@
                         </div>
                     </div>
 
-                    <!-- BARIS TOMBOL DURASI BERLANGGANAN HORIZONTAL (MENGHUBUNGI WHATSAPP ADMIN) -->
+                                            <!-- BARIS TOMBOL DURASI BERLANGGANAN HORIZONTAL (MENGHUBUNGI WHATSAPP ADMIN) -->
                     <div class="pt-2 border-t border-slate-200 space-y-1.5">
                         <span class="text-[10px] font-bold text-slate-600 uppercase tracking-wider block">Pilih Durasi (Langsung Hubungi WA Admin):</span>
                         <div id="durationBtnRow" class="grid grid-cols-3 gap-1.5">
@@ -2342,23 +2340,13 @@
                                 <span class="text-[9px] font-normal opacity-90">(365 Hari)</span>
                             </button>
                         </div>
-                        <!-- KARTU NOMOR WHATSAPP ADMIN REGISTRASI RESMI -->
-                        <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center justify-between text-xs mt-1 shadow-2xs">
-                            <div class="flex items-center space-x-2 truncate pr-1">
-                                <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
-                                    <i class="fa-brands fa-whatsapp text-sm"></i>
-                                </div>
-                                <div class="truncate">
-                                    <span class="text-[10px] text-slate-500 block font-semibold leading-tight">WhatsApp Admin Registrasi & Lisensi:</span>
-                                    <strong class="text-emerald-800 font-mono text-xs">+62 813-2864-0959</strong>
-                                </div>
-                            </div>
-                            <button type="button" onclick="contactAdminRegistrationWhatsapp('pembelian paket langganan')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0">
-                                <i class="fa-brands fa-whatsapp text-xs"></i>
-                                <span>Chat</span>
-                            </button>
+                        <div class="pt-1.5 text-center">
+                            <a href="https://wa.me/6281328640959?text=Halo%20Admin%20FortaPOS,%20saya%20ingin%20registrasi%20/%20berlangganan%20lisensi%20baru" target="_blank" class="w-full py-2 px-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-[11px] transition inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs">
+                                <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+                                <span>Hubungi Admin WA: +62 813-2864-0959</span>
+                            </a>
                         </div>
-                        <p class="text-[10px] text-slate-400 text-center">Otomatis membuka WhatsApp Admin (+6281328640959) dengan format pemesanan paket.</p>
+                        <p class="text-[10px] text-slate-400 text-center">Otomatis membuka WhatsApp Admin (+62 813-2864-0959) untuk pemesanan paket.</p>
                     </div>
                 </div>
 
@@ -2378,7 +2366,7 @@
                             <div>
                                 <label class="block text-xs font-semibold text-slate-600 mb-1">Masukkan Kode Lisensi</label>
                                 <div class="relative">
-                                    <input type="text" id="licenseCodeInput" required placeholder="Cth: PREM-XXXX-XXXX-XXXX atau BASE-XXXX-XXXX-XXXX" class="w-full p-2.5 pr-9 border-2 border-slate-300 focus:border-emerald-500 rounded-xl text-xs sm:text-sm font-mono font-bold uppercase outline-none transition bg-white text-slate-800">
+                                    <input type="text" id="licenseCodeInput" required placeholder="Cth: FORTA-BASIC-3D" class="w-full p-2.5 pr-9 border-2 border-slate-300 focus:border-emerald-500 rounded-xl text-xs sm:text-sm font-mono font-bold uppercase outline-none transition bg-white text-slate-800">
                                     <button type="button" onclick="document.getElementById('licenseCodeInput').value = ''; document.getElementById('licenseCodeInput').focus();" class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer" title="Hapus">
                                         <i class="fa-solid fa-circle-xmark text-sm"></i>
                                     </button>
@@ -2417,21 +2405,6 @@
                                 </button>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- BANTUAN KODE LISENSI ADMIN WHATSAPP -->
-                    <div class="p-2.5 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
-                        <div class="flex items-center space-x-2 truncate pr-1">
-                            <i class="fa-brands fa-whatsapp text-emerald-600 text-base shrink-0"></i>
-                            <div class="truncate">
-                                <span class="text-[10px] text-slate-500 font-semibold block leading-tight">Belum punya kode? Hubungi Admin Registrasi:</span>
-                                <strong class="text-emerald-800 font-mono text-xs">+62 813-2864-0959</strong>
-                            </div>
-                        </div>
-                        <button type="button" onclick="contactAdminRegistrationWhatsapp('pembelian lisensi resmi')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition flex items-center gap-1 cursor-pointer shrink-0">
-                            <i class="fa-brands fa-whatsapp text-xs"></i>
-                            <span>Chat</span>
-                        </button>
                     </div>
 
                     <div class="text-[10px] text-slate-400 text-center leading-relaxed">
@@ -2488,72 +2461,80 @@
     </div>
 
         <!-- ============================================================== -->
-    <!-- MODAL FORCE LOGOUT: SESI DIAMBIL ALIH OLEH PERANGKAT LAIN       -->
+    <!-- MODAL KONFIRMASI LOGOUT: PERINGATAN TRANSAKSI OFFLINE           -->
     <!-- ============================================================== -->
-    <div id="forceLogoutModal" class="fixed inset-0 bg-slate-900/95 z-[210] flex items-center justify-center hidden p-4 backdrop-blur-lg">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 text-center border-2 border-rose-300">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-3xl shadow-sm">
-                <i class="fa-solid fa-lock text-3xl"></i>
+    <div id="logoutOfflineConfirmModal" class="fixed inset-0 bg-slate-900/80 z-[220] flex items-center justify-center hidden p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center border border-slate-200">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl shadow-xs">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
             </div>
             <div>
-                <h3 class="text-lg font-extrabold text-slate-900">Sesi Diambil Alih di Perangkat Lain</h3>
-                <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                    Akun toko Anda telah diambil alih (Takeover) oleh perangkat lain. Demi keamanan data dan penegakan akses perangkat tunggal (Single-Device Access), sesi pada perangkat ini telah ditutup secara bersih dan aman.
+                <h3 class="text-base font-bold text-slate-800">Periksa Data Sebelum Keluar</h3>
+                <p id="logoutOfflineModalDesc" class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Terdapat transaksi atau data lokal di perangkat ini. Jika Anda keluar dan cache dibersihkan, pastikan data lokal Anda aman. Anda dapat mengunduh berkas cadangan darurat terlebih dahulu.
                 </p>
             </div>
-            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-[11px] text-slate-500 font-mono space-y-1">
-                <div>Perangkat Pengambil Alih: <span id="forceLogoutNewDeviceText" class="font-bold text-rose-700">Perangkat Lain</span></div>
-                <div>Status Sesi Lokal: <span class="font-bold text-emerald-700">Telah Dibersihkan (Logout Bersih)</span></div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 font-medium space-y-1">
+                <div class="flex justify-between">
+                    <span>Jumlah Transaksi Lokal:</span>
+                    <strong id="logoutOfflineCountText" class="text-emerald-700 font-bold">0 transaksi</strong>
+                </div>
+                <div class="flex justify-between">
+                    <span>Status Cloud:</span>
+                    <span id="logoutOfflineCloudStatus" class="font-bold text-amber-600">Mode Lokal / Terputus</span>
+                </div>
             </div>
-            <div class="pt-2">
-                <button type="button" onclick="acknowledgeForceLogout()" class="w-full bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold py-3 rounded-xl shadow-md transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>Kembali ke Halaman Login</span>
+            <div class="space-y-2 pt-1">
+                <button type="button" onclick="downloadBackupAndLogout()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-3 rounded-xl shadow transition text-xs flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Unduh Cadangan Darurat (.enc.json) & Keluar</span>
+                </button>
+                <button type="button" onclick="executeConfirmedLogout()" class="w-full bg-red-50 hover:bg-red-100 text-red-600 font-bold py-2 px-3 rounded-xl transition text-xs border border-red-200 cursor-pointer">
+                    Tetap Keluar (Hapus Sesi & Cache)
+                </button>
+                <button type="button" onclick="closeLogoutOfflineModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3 rounded-xl transition text-xs cursor-pointer">
+                    Batal
                 </button>
             </div>
         </div>
     </div>
 
     <!-- ============================================================== -->
-    <!-- MODAL PERINGATAN LOGOUT: DATA TRANSAKSI BELUM TERSINKRONISASI   -->
+    <!-- MODAL SESI DIPUTUSKAN (FORCE LOGOUT KARENA TAKEOVER)           -->
     <!-- ============================================================== -->
-    <div id="unsyncedLogoutModal" class="fixed inset-0 bg-slate-900/90 z-[220] flex items-center justify-center hidden p-4 backdrop-blur-md">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-4 text-center border-2 border-amber-300">
-            <div class="w-16 h-16 mx-auto rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-3xl shadow-sm">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
+    <div id="sessionTerminatedModal" class="fixed inset-0 bg-slate-900/90 z-[230] flex items-center justify-center hidden p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center border border-slate-200">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl shadow-xs">
+                <i class="fa-solid fa-link-slash"></i>
             </div>
             <div>
-                <h3 class="text-lg font-extrabold text-slate-900">Peringatan: Transaksi Belum Tersinkronkan</h3>
-                <p class="text-xs text-slate-600 mt-2 leading-relaxed">
-                    Terdapat <strong id="unsyncedCountNoticeText" class="text-amber-700 font-bold">0 transaksi kasir lokal</strong> yang <strong>BELUM berhasil diunggah ke Cloud Firestore</strong> karena kendala jaringan atau mode offline.
-                </p>
-                <p class="text-[11px] text-rose-600 font-semibold mt-1.5 bg-rose-50 p-2 rounded-lg border border-rose-200">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> Jika Anda keluar sekarang, data sensitif lokal akan dibersihkan dan transaksi yang belum tersinkronisasi berisiko hilang.
+                <h3 class="text-base font-bold text-slate-800">Sesi Telah Diputuskan</h3>
+                <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                    Akun toko ini telah diambil alih (Takeover) dan aktif di perangkat lain. Sesi perangkat ini otomatis diputuskan secara bersih sesuai kebijakan akses perangkat tunggal (Single-Device Access).
                 </p>
             </div>
-            <div class="space-y-2 pt-2">
-                <button type="button" onclick="attemptSyncBeforeLogout()" id="btnSyncAndLogout" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow transition text-xs flex items-center justify-center space-x-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate mr-1"></i>
-                    <span>Coba Sinkronkan Sekarang & Keluar</span>
-                </button>
-                <button type="button" onclick="forceLogoutDiscardQueue()" id="btnForceLogoutDiscard" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer">
-                    Tetap Keluar (Hapus Antrean & Data Lokal)
-                </button>
-                <button type="button" onclick="closeUnsyncedLogoutModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl transition text-xs cursor-pointer">
-                    Batal / Kembali ke Kasir
+            <div class="pt-1">
+                <button type="button" onclick="closeSessionTerminatedModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer shadow-xs">
+                    Masuk Kembali / Login Ulang
                 </button>
             </div>
         </div>
     </div>
 
-<div id="toastContainer" class="fixed bottom-5 right-5 z-[200] space-y-2 pointer-events-none"></div>
+    <div id="toastContainer"  class="fixed bottom-5 right-5 z-[200] space-y-2 pointer-events-none"></div>
 
     <script>
         // ==========================================
         // FIREBASE CONFIGURATION (Multi-Device Firestore)
         // Kredensial preset terkunci permanen - otomatis terhubung
         // ==========================================
-        const firebaseConfig = {
+        // ==========================================
+        // FIREBASE CONFIGURATION (Multi-Device Firestore)
+        // Sediakan objek firebaseConfig kosong terstruktur rapi agar pengguna
+        // tinggal menempelkan API Key / kredensial Firebase project mereka secara langsung.
+        // Konfigurasi juga dapat dimasukkan melalui menu "Pengaturan Toko -> Konfigurasi Firebase".
+        // ==========================================
+        let firebaseConfig = {
             apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
   authDomain: "fortaappsubscribe.firebaseapp.com",
   projectId: "fortaappsubscribe",
@@ -2561,6 +2542,27 @@
   messagingSenderId: "935859426439",
   appId: "1:935859426439:web:e5c43eed974f1606e61422"
         };
+
+        // Kredensial cadangan / tersimpan di localStorage dari Pengaturan Toko UI
+        try {
+            const savedCustomFb = localStorage.getItem('fortapos_custom_firebase_config');
+            if (savedCustomFb) {
+                const parsedFb = JSON.parse(savedCustomFb);
+                if (parsedFb && parsedFb.apiKey && parsedFb.projectId) {
+                    firebaseConfig = parsedFb;
+                }
+            } else if (!firebaseConfig.apiKey) {
+                // Preset default project jika belum dikonfigurasi manual
+                firebaseConfig = {
+                    apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
+                    authDomain: "fortaappsubscribe.firebaseapp.com",
+                    projectId: "fortaappsubscribe",
+                    storageBucket: "fortaappsubscribe.firebasestorage.app",
+                    messagingSenderId: "935859426439",
+                    appId: "1:935859426439:web:e5c43eed974f1606e61422"
+                };
+            }
+        } catch (e) {}
 
         let isFirebaseConfigured = false;
         let db = null;
@@ -2634,311 +2636,7 @@
             return devId;
         }
 
-        function generateSessionToken() {
-            return 'SESS-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-        }
-
         let currentDeviceId = getOrCreateDeviceId();
-        let currentSessionToken = localStorage.getItem('fortapos_session_token') || null;
-
-        // ==========================================
-        // OFFLINE SYNC QUEUE & NETWORK RESILIENCE
-        // ==========================================
-        function getOfflineSyncQueue() {
-            try {
-                const raw = localStorage.getItem('fortapos_offline_sync_queue');
-                return raw ? JSON.parse(raw) : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function saveOfflineSyncQueue(queue) {
-            try {
-                localStorage.setItem('fortapos_offline_sync_queue', JSON.stringify(queue || []));
-            } catch (e) {}
-            updateNetworkStatusUI();
-        }
-
-        function addTransactionToOfflineQueue(trx) {
-            const queue = getOfflineSyncQueue();
-            queue.push(trx);
-            saveOfflineSyncQueue(queue);
-            updateNetworkStatusUI();
-        }
-
-        async function syncOfflineQueueToFirestore(isExplicitCall = false) {
-            if (!navigator.onLine || !isFirebaseConfigured || !db || !currentStoreId) {
-                if (isExplicitCall) showToast('Koneksi internet offline. Tidak dapat menyinkronkan saat ini.', 'error');
-                updateNetworkStatusUI();
-                return false;
-            }
-            if (currentUser && currentUser.isDemo) return true;
-
-            const queue = getOfflineSyncQueue();
-            if (!queue || queue.length === 0) {
-                updateNetworkStatusUI();
-                return true;
-            }
-
-            console.log(`[Offline Sync] Memulai sinkronisasi ${queue.length} transaksi...`);
-            let syncedCount = 0;
-            const remaining = [];
-
-            for (const trx of queue) {
-                try {
-                    const cleanTrx = { ...trx };
-                    const localId = cleanTrx.firestoreId;
-                    delete cleanTrx.firestoreId;
-                    cleanTrx.synced = true;
-                    cleanTrx.syncedAt = new Date().toISOString();
-
-                    const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(cleanTrx);
-                    syncedCount++;
-
-                    // Update in local arrays
-                    const idx = dbTransactions.findIndex(t => t.firestoreId === localId);
-                    if (idx !== -1) {
-                        dbTransactions[idx].firestoreId = docRef.id;
-                        dbTransactions[idx].synced = true;
-                    }
-                } catch (err) {
-                    console.warn("[Offline Sync] Gagal mengunggah transaksi:", err);
-                    remaining.push(trx);
-                }
-            }
-
-            saveOfflineSyncQueue(remaining);
-            saveLocalTransactions();
-            updateNetworkStatusUI();
-            renderHistory();
-
-            if (syncedCount > 0) {
-                showToast(`Sinkronisasi Selesai: ${syncedCount} transaksi offline berhasil diunggah ke Cloud Firestore!`, 'success');
-                logActivity('Sinkronisasi Cloud', `Berhasil menyinkronkan ${syncedCount} transaksi offline ke Cloud Firestore.`);
-                return true;
-            }
-            return remaining.length === 0;
-        }
-
-        function triggerManualSyncFromBadge() {
-            const queue = getOfflineSyncQueue();
-            if (!navigator.onLine) {
-                showToast(`Perangkat sedang Offline. ${queue.length} transaksi tersimpan aman di antrean lokal.`, 'info');
-                return;
-            }
-            if (queue.length > 0) {
-                showToast(`Memulai sinkronisasi ${queue.length} transaksi antrean ke Cloud...`, 'info');
-                syncOfflineQueueToFirestore(true);
-            } else {
-                showToast('Koneksi Cloud Firestore aktif dan seluruh data transaksi telah tersinkronisasi!', 'success');
-            }
-        }
-
-        function updateNetworkStatusUI() {
-            const dot = document.getElementById('firebaseStatusDot');
-            const text = document.getElementById('firebaseStatusText');
-            const badge = document.getElementById('headerFirebaseBadge');
-            const queue = getOfflineSyncQueue();
-            const unsyncedCount = queue.length;
-            const isOnline = navigator.onLine;
-
-            if (!isOnline) {
-                if (dot) dot.className = 'status-dot w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 inline-block animate-pulse';
-                if (text) text.innerText = unsyncedCount > 0 ? `Offline (${unsyncedCount} Antrean)` : 'Mode Offline';
-                if (badge) badge.title = `Koneksi terputus. ${unsyncedCount} transaksi tersimpan lokal dan akan disinkronkan saat online. (Klik untuk periksa)`;
-            } else if (isFirebaseConfigured && db) {
-                if (unsyncedCount > 0) {
-                    if (dot) dot.className = 'status-dot w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-blue-400 inline-block animate-ping';
-                    if (text) text.innerText = `Sync (${unsyncedCount})...`;
-                    if (badge) badge.title = `Menyinkronkan ${unsyncedCount} transaksi lokal ke Cloud... (Klik untuk coba)`;
-                } else {
-                    if (dot) dot.className = 'status-dot w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-400 inline-block shadow';
-                    if (text) text.innerText = 'Cloud Aktif';
-                    if (badge) badge.title = 'Terhubung aktif ke Cloud Firestore real-time. (Klik untuk info)';
-                }
-            } else {
-                if (dot) dot.className = 'status-dot w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-amber-400 inline-block';
-                if (text) text.innerText = 'Mode Lokal';
-                if (badge) badge.title = 'Mode lokal aktif';
-            }
-        }
-
-        // ==========================================
-        // PUSH NOTIFICATION SYSTEM (PENGINGAT HARIAN)
-        // ==========================================
-        function requestPushNotificationPermission() {
-            if (!("Notification" in window)) {
-                showToast("Browser tidak mendukung Web Notification API.", "info");
-                return;
-            }
-            if (Notification.permission === "granted") {
-                showToast("Izin notifikasi push harian sudah aktif.", "success");
-                return;
-            }
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") {
-                    showToast("Notifikasi push harian berhasil diizinkan!", "success");
-                    sendPushNotification("FortaPOS Multi-Device", "Notifikasi pengingat harian aktif untuk toko " + (dbSettings.storeName || "Anda") + ".");
-                } else {
-                    showToast("Izin notifikasi push ditolak oleh browser.", "warning");
-                }
-            });
-        }
-
-        function sendPushNotification(title, body) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                try {
-                    new Notification(title, {
-                        body: body,
-                        icon: "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/svgs/solid/store.svg"
-                    });
-                } catch (e) {}
-            }
-            playBeep('success');
-            triggerHapticFeedback(70);
-            showToast(`🔔 ${title}: ${body}`, 'info');
-        }
-
-        function testPushNotificationDirectly() {
-            if (!("Notification" in window)) {
-                showToast("Browser tidak mendukung Web Notification API. Menggunakan notifikasi in-app.", "info");
-                sendPushNotification("Pengingat Kasir Harian", "Selamat datang di FortaPOS! Cek rekapitulasi penjualan dan backup cloud harian.");
-                return;
-            }
-            if (Notification.permission !== "granted") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        sendPushNotification("Pengingat Kasir FortaPOS", "Uji coba notifikasi push harian berhasil! Sistem pengingat kasir aktif.");
-                    } else {
-                        showToast("Izin notifikasi belum diberikan di browser. Menampilkan notifikasi in-app.", "info");
-                        sendPushNotification("Pengingat Kasir FortaPOS", "Uji coba notifikasi in-app berhasil!");
-                    }
-                });
-            } else {
-                sendPushNotification("Pengingat Kasir FortaPOS", "Uji coba notifikasi push harian berhasil! Sistem pengingat kasir aktif.");
-            }
-        }
-
-        function scheduleDailyReminders() {
-            const lastReminder = localStorage.getItem('pos_last_daily_reminder_date');
-            const today = new Date().toISOString().slice(0, 10);
-            const hour = new Date().getHours();
-
-            const isEnabled = document.getElementById('settingDailyPushReminder') ? document.getElementById('settingDailyPushReminder').checked : true;
-            if (!isEnabled) return;
-
-            if (lastReminder !== today) {
-                if (hour >= 8 && hour < 12) {
-                    sendPushNotification("FortaPOS: Buka Kasir", "Selamat pagi! Siapkan kasir dan pastikan stok produk toko Anda lengkap.");
-                    localStorage.setItem('pos_last_daily_reminder_date', today);
-                } else if (hour >= 18) {
-                    sendPushNotification("FortaPOS: Tutup Kasir", "Waktunya rekap penjualan harian! Periksa laporan dan lakukan pencadangan cloud.");
-                    localStorage.setItem('pos_last_daily_reminder_date', today);
-                }
-            }
-        }
-
-        // ==========================================
-        // FORCE LOGOUT & SENSITIVE CACHE CLEANUP
-        // ==========================================
-        function clearSensitiveLocalStorage() {
-            const sensitiveKeys = [
-                'toko_hj_nurjanah_session',
-                'fortapos_active_device_id',
-                'fortapos_session_token',
-                'pos_latest_encrypted_backup',
-                'pos_last_backup_checksum',
-                'pos_last_daily_backup_date',
-                'pos_last_daily_backup_time',
-                'toko_hj_nurjanah_transactions',
-                'toko_registered_owners',
-                'toko_hj_nurjanah_employees',
-                'fortapos_e2e_key',
-                'toko_demo_products',
-                'toko_demo_transactions',
-                'toko_demo_settings',
-                'toko_demo_employees',
-                'toko_demo_logs',
-                'toko_demo_license',
-                'fortapos_demo_data'
-            ];
-            sensitiveKeys.forEach(k => {
-                try { localStorage.removeItem(k); } catch (e) {}
-            });
-            try {
-                sessionStorage.setItem('fortapos_explicit_logout', 'true');
-            } catch (e) {}
-        }
-
-        function forceLogoutDueToTakeover(newDeviceId) {
-            console.warn("[Takeover Sesi Terdeteksi] Perangkat lain mengambil alih:", newDeviceId);
-
-            // 1. Unsubscribe real-time Firestore listeners
-            unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
-            unsubscribers = [];
-
-            // 2. Play warning audio and haptic feedback
-            playBeep('error');
-            triggerHapticFeedback(120);
-
-            // 3. Clear sensitive data in localStorage cleanly
-            clearSensitiveLocalStorage();
-            currentUser = null;
-            currentStoreId = null;
-            cart = [];
-
-            // 4. Show force logout modal
-            const modal = document.getElementById('forceLogoutModal');
-            const devText = document.getElementById('forceLogoutNewDeviceText');
-            if (devText) devText.innerText = newDeviceId || 'Perangkat Baru';
-            if (modal) modal.classList.remove('hidden');
-
-            hideDeviceLockoutModal();
-            const authModal = document.getElementById('authModal');
-            if (authModal) authModal.classList.add('hidden');
-        }
-
-        function acknowledgeForceLogout() {
-            const modal = document.getElementById('forceLogoutModal');
-            if (modal) modal.classList.add('hidden');
-            location.reload();
-        }
-
-        async function verifyActiveDeviceSession() {
-            if (!currentUser || currentUser.role !== 'owner' || currentUser.isDemo) return true;
-            if (!navigator.onLine || !isFirebaseConfigured || !db || !currentStoreId) return true;
-
-            const isPremium = currentLicense && currentLicense.packageType === 'premium';
-            if (isPremium) return true;
-
-            try {
-                const storeDoc = await db.collection('stores').doc(currentStoreId).get();
-                if (storeDoc.exists) {
-                    const data = storeDoc.data();
-                    const activeId = (data.currentActiveDevice || data.activeDeviceId || "").trim();
-                    const activeToken = data.activeSessionToken;
-                    const myDevId = getOrCreateDeviceId();
-                    const myToken = localStorage.getItem('fortapos_session_token');
-
-                    if (activeId && activeId !== myDevId) {
-                        forceLogoutDueToTakeover(activeId);
-                        return false;
-                    }
-                    if (activeToken && myToken && activeToken !== myToken) {
-                        forceLogoutDueToTakeover(activeId || 'Perangkat Lain');
-                        return false;
-                    }
-
-                    await db.collection('stores').doc(currentStoreId).update({
-                        activeDeviceLastSeen: new Date().toISOString()
-                    });
-                }
-            } catch (e) {
-                console.warn("Verifikasi sesi berkala:", e);
-            }
-            return true;
-        }
         let currentLicense = JSON.parse(localStorage.getItem('fortapos_license_data')) || {
             packageType: 'none',
             packageName: 'Belum Aktif',
@@ -2955,9 +2653,7 @@
             { code: 'FORTA-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
             { code: 'FORTA-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true },
             { code: 'TRIAL-BASIC-3D', packageType: 'basic', packageName: 'Paket Basic', durationDays: 3, isUsed: false, isUniversalTrial: true },
-            { code: 'TRIAL-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true },
-            { code: 'BASE-DEMO-2026-TEST', packageType: 'basic', packageName: 'Paket Basic', durationDays: 30, isUsed: false, isUniversalTrial: true },
-            { code: 'PREM-DEMO-2026-TEST', packageType: 'premium', packageName: 'Paket Premium', durationDays: 30, isUsed: false, isUniversalTrial: true }
+            { code: 'TRIAL-PREMIUM-3D', packageType: 'premium', packageName: 'Paket Premium', durationDays: 3, isUsed: false, isUniversalTrial: true }
         ];
 
         const DEFAULT_SEED_PRODUCTS = [
@@ -3495,48 +3191,18 @@
             }
         }
 
-        // ==========================================
-        // WHATSAPP ADMIN REGISTRASI & LISENSI RESMI
-        // Nomor WhatsApp Admin: +6281328640959 (+62 813-2864-0959)
-        // ==========================================
-        const FORTAPOS_ADMIN_WHATSAPP = '6281328640959';
-
-        function contactAdminRegistrationWhatsapp(topic = 'registrasi') {
-            const targetPhone = FORTAPOS_ADMIN_WHATSAPP;
-            const storeIdStr = currentStoreId || (currentUser ? currentUser.storeId : '-');
-            const storeNameStr = (dbSettings && dbSettings.storeName) ? dbSettings.storeName : '-';
-            const ownerNameStr = (currentUser && currentUser.name) ? currentUser.name : '';
-            
-            let message = `Halo Admin FortaPOS (+6281328640959), saya ingin bantuan untuk keperluan ${topic} akun toko & lisensi aplikasi FortaPOS Multi-Device.`;
-            if (storeNameStr !== '-' || storeIdStr !== '-') {
-                message += `\nNama Toko: ${storeNameStr}\nStore ID: ${storeIdStr}`;
-            }
-            if (ownerNameStr) {
-                message += `\nNama Owner: ${ownerNameStr}`;
-            }
-            const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
-            window.open(waUrl, '_blank');
-            showToast(`Membuka WhatsApp Admin Registrasi (+62 813-2864-0959)...`);
-            logActivity('WhatsApp Admin', `Menghubungi WA Admin Registrasi (+6281328640959) untuk keperluan ${topic}.`);
-        }
-
         function orderSubscriptionDuration(durationDays) {
             const pkgName = selectedPurchasePackage === 'premium' ? 'Premium' : 'Basic';
             const durLabel = durationDays === 30 ? '1 Bulan (30 Hari)' : (durationDays === 90 ? '3 Bulan (90 Hari)' : '1 Tahun (365 Hari)');
-            const targetPhone = FORTAPOS_ADMIN_WHATSAPP;
-            const storeIdStr = currentStoreId || (currentUser ? currentUser.storeId : 'TOKO BARU');
-            const storeNameStr = (dbSettings && dbSettings.storeName) ? dbSettings.storeName : 'Toko Saya';
+            const targetPhone = sanitizeWhatsappNumber(dbSettings.ownerWhatsapp || dbSettings.phone || '6281299887766');
             
-            const message = `Halo Admin FortaPOS (+6281328640959), saya ingin mendaftar dan berlangganan Paket ${pkgName} dengan durasi ${durLabel}.\nNama Toko: ${storeNameStr}\nStore ID: ${storeIdStr}\nMohon informasi pembayaran dan kode lisensi aktivasinya. Terima kasih.`;
+            const message = `Halo Admin FortaPOS, saya ingin berlangganan Paket ${pkgName} dengan durasi ${durLabel} untuk akun toko saya.`;
             const waUrl = `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
 
             window.open(waUrl, '_blank');
-            showToast(`Membuka WhatsApp Admin Registrasi (+62 813-2864-0959) untuk pesanan Paket ${pkgName} (${durLabel})`);
-            logActivity('Lisensi SaaS', `Menghubungi Admin WhatsApp (+6281328640959) untuk pesanan Paket ${pkgName} (${durLabel})`);
+            showToast(`Membuka WhatsApp Admin (${targetPhone}) untuk pesanan Paket ${pkgName} ${durLabel}`);
+            logActivity('Lisensi SaaS', `Menghubungi Admin WhatsApp untuk langganan Paket ${pkgName} (${durLabel})`);
         }
-
-        window.contactAdminRegistrationWhatsapp = contactAdminRegistrationWhatsapp;
-        window.orderSubscriptionDuration = orderSubscriptionDuration;
 
         function pasteSampleCodeToInput(code) {
             const input = document.getElementById('licenseCodeInput');
@@ -3570,19 +3236,9 @@
             await activateLicense(code);
         }
 
-        function sanitizeLicenseCode(rawInput) {
-            if (!rawInput) return '';
-            return String(rawInput)
-                .replace(/[\u200B-\u200D\uFEFF]/g, '')
-                .replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g, '-')
-                .toUpperCase()
-                .replace(/\s+/g, '')
-                .replace(/[^A-Z0-9-]/g, '')
-                .trim();
-        }
-
-        async function activateLicense(code) {
-            const cleanCode = sanitizeLicenseCode(code);
+                async function activateLicense(code) {
+            // Bersihkan input kode lisensi dari spasi berlebih dan format huruf kapital
+            const cleanCode = (code || '').trim().replace(/\s+/g, '').toUpperCase();
             if (!cleanCode) {
                 playBeep('error');
                 showLicenseErrorPopup('masukkan kode yang benar');
@@ -3602,32 +3258,9 @@
                 const isUniversalTrial = isTrialBasic || isTrialPremium || cleanCode.endsWith('-3D') || cleanCode.includes('TRIAL-3D');
 
                 let licenseDocData = null;
-                let matchedDocId = cleanCode;
 
-                // 1. Periksa dokumen di Firestore secara real-time dari koleksi '/licenses/{code}'
-                if (isFirebaseConfigured && db) {
-                    try {
-                        let docSnap = await db.collection('licenses').doc(cleanCode).get();
-                        if (docSnap.exists) {
-                            licenseDocData = docSnap.data();
-                            matchedDocId = docSnap.id;
-                        } else {
-                            // Cek jika ID dokumen disimpan dalam huruf kecil atau query berdasarkan field 'code'
-                            const querySnap = await db.collection('licenses').where('code', '==', cleanCode).limit(1).get();
-                            if (!querySnap.empty) {
-                                docSnap = querySnap.docs[0];
-                                licenseDocData = docSnap.data();
-                                matchedDocId = docSnap.id;
-                            }
-                        }
-                    } catch (fsErr) {
-                        console.warn("Pemeriksaan Firestore /licenses gagal:", fsErr);
-                    }
-                }
-
-                // 2. Jika kode trial universal dan belum ada di Firestore
-                if (!licenseDocData && isUniversalTrial) {
-                    const packageType = (isTrialPremium || cleanCode.includes('PREMIUM') || cleanCode.startsWith('PREM')) ? 'premium' : 'basic';
+                if (isUniversalTrial) {
+                    const packageType = (isTrialPremium || cleanCode.includes('PREMIUM')) ? 'premium' : 'basic';
                     const packageName = packageType === 'premium' ? 'Paket Premium' : 'Paket Basic';
                     licenseDocData = {
                         code: cleanCode,
@@ -3637,20 +3270,32 @@
                         isUsed: false,
                         isUniversalTrial: true
                     };
-                }
-
-                // 3. Fallback periksa seed licenses lokal jika offline atau Firestore kosong
-                if (!licenseDocData) {
-                    let localLicenses = [];
-                    try {
-                        const saved = localStorage.getItem('fortapos_local_licenses');
-                        localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
-                    } catch (e) {
-                        localLicenses = LOCAL_SEED_LICENSES;
+                } else {
+                    // 1. Query real-time Firestore pada koleksi /licenses/{code}
+                    if (isFirebaseConfigured && db) {
+                        try {
+                            const docSnap = await db.collection('licenses').doc(cleanCode).get();
+                            if (docSnap.exists) {
+                                licenseDocData = docSnap.data();
+                            }
+                        } catch (fsErr) {
+                            console.warn("Pemeriksaan Firestore /licenses gagal:", fsErr);
+                        }
                     }
-                    const found = localLicenses.find(l => (l.code || '').toUpperCase() === cleanCode);
-                    if (found) {
-                        licenseDocData = { ...found };
+
+                    // 2. Fallback periksa seed licenses lokal jika offline atau Firestore belum memuat dokumen
+                    if (!licenseDocData) {
+                        let localLicenses = [];
+                        try {
+                            const saved = localStorage.getItem('fortapos_local_licenses');
+                            localLicenses = saved ? JSON.parse(saved) : LOCAL_SEED_LICENSES;
+                        } catch (e) {
+                            localLicenses = LOCAL_SEED_LICENSES;
+                        }
+                        const found = localLicenses.find(l => (l.code || '').replace(/\s+/g, '').toUpperCase() === cleanCode);
+                        if (found) {
+                            licenseDocData = { ...found };
+                        }
                     }
                 }
 
@@ -3662,34 +3307,26 @@
                 }
 
                 // JIKA BUKAN KODE UJI COBA UNIVERSAL DAN SUDAH TERPAKAI:
-                if (!isUniversalTrial && !licenseDocData.isUniversalTrial && (licenseDocData.isUsed === true || licenseDocData.status === 'used')) {
+                if (!isUniversalTrial && !licenseDocData.isUniversalTrial && licenseDocData.isUsed === true) {
                     playBeep('error');
-                    showToast('Kode lisensi ini sudah terpakai di toko lain dan tidak dapat digunakan kembali!', 'error');
+                    showToast('Kode lisensi ini sudah terpakai oleh toko lain!', 'error');
                     return;
                 }
 
-                // JIKA KODE VALID: Tentukan paket & durasi secara akurat
-                // Mendukung format PREM-XXXX-XXXX-XXXX atau BASE-XXXX-XXXX-XXXX dari Admin Panel
-                let packageType = (licenseDocData.packageType || '').toLowerCase();
-                if (!packageType || (packageType !== 'premium' && packageType !== 'basic')) {
-                    if (cleanCode.startsWith('PREM') || cleanCode.includes('PREMIUM')) {
-                        packageType = 'premium';
-                    } else {
-                        packageType = 'basic';
-                    }
-                }
-
+                // Tentukan durasi & tipe paket dari data lisensi atau inferensi kode
+                const durationDays = isUniversalTrial ? 3 : (Number(licenseDocData.durationDays) || (cleanCode.includes('365') ? 365 : cleanCode.includes('90') ? 90 : 30));
+                const packageType = (licenseDocData.packageType || (cleanCode.includes('PREM') ? 'premium' : 'basic')).toLowerCase();
                 const packageName = licenseDocData.packageName || (packageType === 'premium' ? 'Paket Premium' : 'Paket Basic');
-                const durationDays = isUniversalTrial ? 3 : (parseInt(licenseDocData.durationDays || licenseDocData.duration) || 30);
 
                 const now = new Date();
                 const expiresAt = new Date(now.getTime() + (durationDays * 24 * 60 * 60 * 1000)).toISOString();
+                const activeStoreTarget = currentStoreId || (currentUser ? currentUser.storeId : 'STORE');
 
-                // Ubah status isUsed menjadi true di Firestore secara real-time
+                // 3. Ubah status isUsed menjadi true dan isi usedByStoreId di Firestore
                 if (isFirebaseConfigured && db) {
                     try {
                         if (isUniversalTrial) {
-                            await db.collection('licenses').doc(matchedDocId).set({
+                            await db.collection('licenses').doc(cleanCode).set({
                                 code: cleanCode,
                                 packageType,
                                 packageName,
@@ -3697,19 +3334,17 @@
                                 isUniversalTrial: true,
                                 isUsed: false,
                                 lastActivatedAt: now.toISOString(),
-                                lastUsedByStoreId: currentStoreId || (currentUser ? currentUser.storeId : 'STORE')
+                                lastUsedByStoreId: activeStoreTarget
                             }, { merge: true });
                         } else {
-                            await db.collection('licenses').doc(matchedDocId).update({
+                            await db.collection('licenses').doc(cleanCode).set({
+                                ...licenseDocData,
+                                code: cleanCode,
                                 isUsed: true,
-                                status: 'used',
-                                usedByStoreId: currentStoreId || (currentUser ? currentUser.storeId : 'STORE'),
-                                usedByEmail: currentUser ? (currentUser.email || '') : '',
-                                usedByOwner: currentUser ? (currentUser.name || '') : '',
+                                usedByStoreId: activeStoreTarget,
                                 activatedAt: now.toISOString(),
-                                expiresAt: expiresAt,
-                                updatedAt: now.toISOString()
-                            });
+                                expiresAt: expiresAt
+                            }, { merge: true });
                         }
 
                         if (currentStoreId) {
@@ -3731,8 +3366,7 @@
                     }
                 }
 
-                // SANGAT PENTING: Langsung memaksa pembaruan data paket (Basic/Premium) ke LocalStorage kasir
-                // seketika itu juga tanpa perlu memuat ulang (reload) halaman secara manual!
+                // 4. PERBARUI STATUS PAKET DI LOCALSTORAGE & MEMORI SAAT ITU JUGA TANPA RELOAD HALAMAN
                 currentLicense = {
                     code: cleanCode,
                     packageType,
@@ -3754,53 +3388,27 @@
                     } catch (e) {
                         localLicenses = LOCAL_SEED_LICENSES;
                     }
-                    const matchIdx = localLicenses.findIndex(l => (l.code || '').toUpperCase() === cleanCode);
+                    const matchIdx = localLicenses.findIndex(l => (l.code || '').replace(/\s+/g, '').toUpperCase() === cleanCode);
                     if (matchIdx !== -1) {
                         localLicenses[matchIdx].isUsed = true;
-                        localLicenses[matchIdx].usedByStoreId = currentStoreId;
+                        localLicenses[matchIdx].usedByStoreId = activeStoreTarget;
                         localStorage.setItem('fortapos_local_licenses', JSON.stringify(localLicenses));
                     }
                 }
 
-                // Buka seketika seluruh blokir dashboard kasir & perbarui UI secara instan (No Reload Required!)
+                // 5. UPDATE INSTANT TAMPILAN KASIR & FITUR SECARA REAL-TIME
                 playBeep('success');
-                triggerHapticFeedback(100);
+                triggerHapticFeedback(90);
                 const trialBadge = isUniversalTrial ? ' (Uji Coba 3 Hari)' : ` (${durationDays} Hari)`;
-                showToast(`Lisensi ${packageName}${trialBadge} BERHASIL DIAKTIFKAN! Akses kasir terbuka seketika.`, 'success');
+                showToast(`Lisensi ${packageName}${trialBadge} BERHASIL DIAKTIFKAN!`, 'success');
                 logActivity('Aktivasi Lisensi', `Mengaktifkan lisensi ${packageName} (${cleanCode}) masa aktif ${durationDays} hari.`);
 
-                // 1. Sembunyikan banner lisensi non-aktif
-                const inactiveBanner = document.getElementById('licenseInactiveBanner');
-                if (inactiveBanner) inactiveBanner.classList.add('hidden');
-
-                // 2. Buka tombol bayar / kasir utama
-                const checkoutBtn = document.getElementById('checkoutBtn');
-                if (checkoutBtn) {
-                    checkoutBtn.innerHTML = '<i class="fa-solid fa-wallet mr-1.5"></i><span>Bayar Sekarang</span>';
-                    checkoutBtn.onclick = () => openPaymentModal();
-                    checkoutBtn.disabled = (cart.length === 0);
-                    checkoutBtn.title = '';
-                    checkoutBtn.classList.remove('cursor-not-allowed', 'opacity-60');
-                }
-
-                // 3. Buka tombol tambah produk
-                const btnAdd = document.getElementById('btnOpenAddProduct');
-                if (btnAdd) {
-                    btnAdd.title = 'Tambah Barang Baru';
-                    btnAdd.onclick = () => openProductModal();
-                    btnAdd.classList.remove('opacity-75');
-                }
-
-                // 4. Perbarui indikator & tab lisensi
                 updateLicenseModalCol1UI();
-                updateNavLicenseBadge();
                 applyLicenseRestrictions();
+                updateNavLicenseBadge();
 
-                // 5. Tutup modal lisensi dan bersihkan input
                 const licenseModal = document.getElementById('licenseModal');
                 if (licenseModal) licenseModal.classList.add('hidden');
-                const codeInput = document.getElementById('licenseCodeInput');
-                if (codeInput) codeInput.value = '';
 
                 if (isNewOwnerRegistrationPending) {
                     isNewOwnerRegistrationPending = false;
@@ -3958,30 +3566,24 @@
 
         async function takeoverDeviceSession() {
             const myDeviceId = getOrCreateDeviceId();
-            const newSessionToken = generateSessionToken();
-            localStorage.setItem('fortapos_session_token', newSessionToken);
-            currentSessionToken = newSessionToken;
-            localStorage.setItem('fortapos_active_device_id', myDeviceId);
-
             if (isFirebaseConfigured && db && currentStoreId) {
                 try {
                     await db.collection('stores').doc(currentStoreId).update({
                         currentActiveDevice: myDeviceId,
                         activeDeviceId: myDeviceId,
-                        activeSessionToken: newSessionToken,
-                        activeDeviceLastSeen: new Date().toISOString(),
-                        lastTakeoverAt: new Date().toISOString(),
-                        lastTakeoverBy: myDeviceId
+                        activeDeviceLastSeen: new Date().toISOString()
                     });
-                    showToast('Sesi perangkat berhasil diambil alih (Takeover)! Perangkat lain telah diputuskan.', 'success');
-                    logActivity('Single Device', 'Mengambil alih sesi perangkat ke: ' + myDeviceId);
+                    localStorage.setItem('fortapos_active_device_id', myDeviceId);
+                    showToast('Sesi perangkat berhasil diambil alih (Takeover) ke perangkat ini!', 'success');
+                    logActivity('Single Device', 'Memindahkan currentActiveDevice ke perangkat: ' + myDeviceId);
                 } catch (e) {
                     console.warn("Gagal takeover device:", e);
                 }
             }
             hideDeviceLockoutModal();
-            initAppSession();
-            if (!isLicenseActive()) {
+            if (isLicenseActive()) {
+                initAppSession();
+            } else {
                 openLicenseModal();
             }
         }
@@ -4046,50 +3648,26 @@
         // ==========================================
         window.onload = async function() {
             initTheme();
-
-            // Mencegah celah auto-login jika baru saja logout
-            const wasLoggedOut = sessionStorage.getItem('fortapos_explicit_logout');
-            if (wasLoggedOut) {
-                sessionStorage.removeItem('fortapos_explicit_logout');
-                clearSensitiveLocalStorage();
-                currentUser = null;
-            }
-
             initLocalStorageData();
-            updateNetworkStatusUI();
+            
+            updateFirebaseStatusUI();
 
             if (!isFirebaseConfigured) {
                 const banner = document.getElementById('demoModeBanner');
                 if (banner) banner.classList.remove('hidden');
             }
 
-            if (!currentUser || !currentUser.storeId) {
-                currentUser = null;
-                localStorage.removeItem('toko_hj_nurjanah_session');
+            if (!currentUser) {
                 document.getElementById('authModal').classList.remove('hidden');
             } else {
                 document.getElementById('authModal').classList.add('hidden');
-                initAppSession();
+                
+                // Cek apakah lisensi owner sudah aktif
                 if (currentUser.role === 'owner' && !currentUser.isDemo && !isLicenseActive()) {
                     openLicenseModal();
+                } else {
+                    initAppSession();
                 }
-            }
-
-            // Event Listeners status koneksi offline/online & auto sync
-            window.addEventListener('online', () => {
-                updateNetworkStatusUI();
-                verifyActiveDeviceSession();
-                syncOfflineQueueToFirestore();
-                showToast('Koneksi internet kembali online! Menyinkronkan antrean data...', 'info');
-            });
-
-            window.addEventListener('offline', () => {
-                updateNetworkStatusUI();
-                showToast('Koneksi internet terputus. Mode Offline aktif, data disimpan di antrean lokal.', 'warning');
-            });
-
-            if (navigator.onLine) {
-                setTimeout(syncOfflineQueueToFirestore, 2500);
             }
 
             loadReceiptFormatToUI();
@@ -4323,8 +3901,6 @@
             currentUser = null;
             location.reload();
         }
-
-
 
         function initLocalStorageData() {
             if (currentUser && currentUser.isDemo) {
@@ -4608,13 +4184,6 @@
                 return;
             }
 
-            // Pemisahan peran yang jelas: Deteksi jika pengguna salah memasukkan Store ID di form Owner
-            if (email.toUpperCase().startsWith('HJN-') || email.toUpperCase().startsWith('FORTA-')) {
-                playBeep('error');
-                showToast('Anda memasukkan Store ID pada form Owner. Untuk kasir staf, silakan beralih ke tab "Login Karyawan"!', 'error');
-                return;
-            }
-
             let foundStore = null;
             let accountFoundWithWrongPassword = false;
 
@@ -4632,7 +4201,20 @@
                             .get();
                     }
 
+                    if (querySnap.empty) {
+                        querySnap = await db.collection('stores')
+                            .where('storeId', '==', email.toUpperCase())
+                            .get();
+                    }
 
+                    if (querySnap.empty) {
+                        try {
+                            const directDoc = await db.collection('stores').doc(email.toUpperCase()).get();
+                            if (directDoc.exists) {
+                                querySnap = { empty: false, docs: [directDoc] };
+                            }
+                        } catch (docErr) {}
+                    }
 
                     if (!querySnap.empty) {
                         // Akun ditemukan di Firestore! Cek password
@@ -4763,9 +4345,6 @@
 
             // 5. MANAJEMEN SESI MULTI-DEVICE & VERIFIKASI STATUS PERANGKAT
             const myDeviceId = getOrCreateDeviceId();
-            const newSessionToken = generateSessionToken();
-            localStorage.setItem('fortapos_session_token', newSessionToken);
-            currentSessionToken = newSessionToken;
 
             // Verifikasi status terkini field currentActiveDevice di Firestore sebelum memulai sesi
             let currentActiveDev = (foundStore.currentActiveDevice || foundStore.activeDeviceId || "").trim();
@@ -4801,7 +4380,6 @@
                         await db.collection('stores').doc(storeId).update({
                             currentActiveDevice: myDeviceId,
                             activeDeviceId: myDeviceId,
-                            activeSessionToken: newSessionToken,
                             activeDeviceLastSeen: new Date().toISOString()
                         });
                     } catch (e) {
@@ -4815,16 +4393,20 @@
                 showToast('Login Owner berhasil! Selamat datang, ' + ownerName, 'success');
                 logActivity('Autentikasi', 'Owner ' + ownerName + ' berhasil login.');
 
-                // Jalankan sesi kasir dengan aman
-                initAppSession();
+                // Validasi Lisensi Berlangganan: Jika lisensi aktif, langsung buka kasir tanpa loop registrasi
                 if (!isLicenseActive()) {
                     openLicenseModal();
+                } else {
+                    initAppSession();
                 }
             } else {
                 // b) FIELD TIDAK KOSONG - TERJADI SESSION COLLISION:
+                // Kredensial akun valid, tetapi field currentActiveDevice di Firestore masih aktif di perangkat lain.
+                // CEGAH LOOP REGISTRASI SECARA EKSPLISIT:
+                // Pengguna TIDAK dialihkan ke pendaftaran baru, melainkan diberikan opsi remediasi 'Takeover'
                 playBeep('warning');
                 document.getElementById('authModal').classList.add('hidden');
-                showToast('Sesi akun sedang aktif di perangkat lain (' + currentActiveDev + '). Anda dapat mengambil alih sesi di sini.', 'warning');
+                showToast('Sesi akun sedang aktif di perangkat lain (' + currentActiveDev + '). Gunakan opsi Takeover untuk mengambil alih sesi.', 'warning');
                 showDeviceLockoutModal(currentActiveDev);
             }
         }
@@ -4960,16 +4542,10 @@
                 }
             }
 
-            // 3. PROTEKSI KETAT: PESAN ERROR SPESIFIK & JELAS TANPA BENTROKAN STORE ID
-            if (!matchedStore) {
-                playBeep('error');
-                showToast(`Store ID "${storeId}" tidak ditemukan! Pastikan Store ID yang diberikan oleh Owner sudah benar.`, 'error');
-                return;
-            }
-
+            // 3. PROTEKSI KETAT: JIKA DATA TIDAK VALID, TOLAK SECARA MUTLAK!
             if (!isValid) {
                 playBeep('error');
-                showToast(`Nama Karyawan atau Password salah untuk Store ID "${storeId}".`, 'error');
+                showToast('Kredensial Karyawan atau Store ID tidak valid!', 'error');
                 return;
             }
 
@@ -5000,101 +4576,188 @@
             initAppSession();
         }
 
-        async function logoutApp() {
-            // 1. Cek validasi antrean transaksi offline sebelum logout
-            const queue = getOfflineSyncQueue();
-            if (queue && queue.length > 0) {
-                showUnsyncedLogoutModal(queue.length);
-                return;
-            }
+                // ==========================================
+        // SINGLE-DEVICE FORCE LOGOUT & SESSION TERMINATION
+        // ==========================================
+        function forceLogoutCollisionSession(otherDeviceId) {
+            unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
+            unsubscribers = [];
+            localStorage.removeItem('toko_hj_nurjanah_session');
+            localStorage.removeItem('fortapos_active_device_id');
+            localStorage.removeItem('fortapos_temp_secret');
+            currentUser = null;
 
-            // 2. Lanjutkan logout bersih jika seluruh data aman
-            await executeCleanLogout();
+            const modal = document.getElementById('sessionTerminatedModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+            } else {
+                alert('Sesi Anda telah diputus karena akun telah diambil alih (Takeover) oleh perangkat lain.');
+                location.reload();
+            }
         }
 
-        function showUnsyncedLogoutModal(count) {
-            const modal = document.getElementById('unsyncedLogoutModal');
-            const textEl = document.getElementById('unsyncedCountNoticeText');
-            if (textEl) textEl.innerText = `${count} transaksi kasir lokal`;
+        function closeSessionTerminatedModal() {
+            const modal = document.getElementById('sessionTerminatedModal');
+            if (modal) modal.classList.add('hidden');
+            const authModal = document.getElementById('authModal');
+            if (authModal) {
+                authModal.classList.remove('hidden');
+                switchAuthTab('loginOwner');
+            } else {
+                location.reload();
+            }
+        }
+
+        // ==========================================
+        // KEAMANAN LOGOUT & PERINGATAN ANTREAN OFFLINE
+        // ==========================================
+        function hasUnsyncedOfflineTransactions() {
+            if (currentUser && currentUser.isDemo) return false;
+            if (!isFirebaseConfigured || !db) {
+                return dbTransactions && dbTransactions.length > 0;
+            }
+            let localTrx = [];
+            try {
+                const saved = localStorage.getItem('toko_hj_nurjanah_transactions');
+                if (saved) localTrx = JSON.parse(saved);
+            } catch (e) {}
+            return localTrx.some(t => t._isPendingSync === true || t._isLocalOnly === true);
+        }
+
+        async function logoutApp() {
+            if (hasUnsyncedOfflineTransactions()) {
+                openLogoutOfflineModal();
+                return;
+            }
+            await performActualLogout();
+        }
+
+        function openLogoutOfflineModal() {
+            const modal = document.getElementById('logoutOfflineConfirmModal');
+            const countEl = document.getElementById('logoutOfflineCountText');
+            const cloudStatus = document.getElementById('logoutOfflineCloudStatus');
+            if (countEl) countEl.innerText = `${dbTransactions.length} transaksi lokal`;
+            if (cloudStatus) {
+                cloudStatus.innerText = isFirebaseConfigured ? 'Antrean Offline' : 'Mode Lokal / Offline';
+                cloudStatus.className = isFirebaseConfigured ? 'font-bold text-amber-600' : 'font-bold text-rose-600';
+            }
             if (modal) modal.classList.remove('hidden');
         }
 
-        function closeUnsyncedLogoutModal() {
-            const modal = document.getElementById('unsyncedLogoutModal');
+        function closeLogoutOfflineModal() {
+            const modal = document.getElementById('logoutOfflineConfirmModal');
             if (modal) modal.classList.add('hidden');
         }
 
-        async function attemptSyncBeforeLogout() {
-            const btn = document.getElementById('btnSyncAndLogout');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>Menyinkronkan ke Cloud...</span>';
-            }
-
-            await syncOfflineQueueToFirestore(true);
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-rotate mr-1"></i><span>Coba Sinkronkan Sekarang & Keluar</span>';
-            }
-
-            const remaining = getOfflineSyncQueue();
-            if (remaining.length === 0) {
-                showToast('Semua transaksi berhasil disinkronkan ke Cloud! Memproses logout...', 'success');
-                closeUnsyncedLogoutModal();
-                await executeCleanLogout();
-            } else {
-                showToast(`Masih terdapat ${remaining.length} transaksi yang gagal diunggah karena kendala jaringan.`, 'error');
-            }
+        async function downloadBackupAndLogout() {
+            downloadEncryptedBackupFile();
+            closeLogoutOfflineModal();
+            setTimeout(async () => {
+                await performActualLogout();
+            }, 800);
         }
 
-        async function forceLogoutDiscardQueue() {
-            closeUnsyncedLogoutModal();
-            localStorage.removeItem('fortapos_offline_sync_queue');
-            await executeCleanLogout();
+        async function executeConfirmedLogout() {
+            closeLogoutOfflineModal();
+            await performActualLogout();
         }
 
-        async function executeCleanLogout() {
-            // Reset active device di Firestore jika Owner
+        async function performActualLogout() {
+            showToast('Memproses keluar & membersihkan sesi...', 'info');
+
+            // 1. Reset field currentActiveDevice di Firestore jika role owner
             if (currentUser && currentUser.role === 'owner' && currentStoreId && isFirebaseConfigured && db) {
                 try {
                     await db.collection('stores').doc(currentStoreId).update({
                         currentActiveDevice: "",
                         activeDeviceId: "",
-                        activeSessionToken: "",
                         activeDeviceLastSeen: null
                     });
-                    console.log("Field currentActiveDevice berhasil dikosongkan di Firestore.");
+                    console.log("Field currentActiveDevice berhasil di-reset bersih di Firestore sebelum logout.");
                 } catch (e) {
-                    console.warn("Gagal mengosongkan active device saat logout:", e);
+                    console.warn("Gagal mengosongkan currentActiveDevice saat logout:", e);
                 }
             }
 
-            // Update status offline jika Karyawan
+            // 2. Jika karyawan, update status offline di Firestore
             if (currentUser && currentUser.role === 'employee' && currentUser.employeeDocId && isFirebaseConfigured && db) {
                 try {
                     await db.collection('stores').doc(currentStoreId || currentUser.storeId).collection('employees').doc(currentUser.employeeDocId).update({
                         status: 'offline',
                         lastActive: new Date().toISOString()
                     });
-                } catch (e) {}
+                } catch (e) {
+                    console.warn("Gagal update status offline:", e);
+                }
             }
 
-            // Putuskan listener
+            // 3. Putuskan listeners realtime Firestore
             unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
             unsubscribers = [];
 
-            // Bersihkan seluruh data sensitif di localStorage
-            clearSensitiveLocalStorage();
+            // 4. HAPUS KETAT SELURUH TOKEN SESI, STORE ID, DAN KUNCI ENKRIPSI DARI LOCALSTORAGE
+            localStorage.removeItem('toko_hj_nurjanah_session');
+            localStorage.removeItem('fortapos_active_device_id');
+            localStorage.removeItem('fortapos_temp_secret');
+
+            if (currentUser && currentUser.isDemo) {
+                clearDemoDataStorage();
+            }
+
+            // 5. Bersihkan variabel memori
             currentUser = null;
             currentStoreId = null;
-            cart = [];
 
+            // 6. Muat ulang halaman secara bersih untuk mencegah celah auto-login
+            location.reload();
+        }
+
+        // ==========================================
+        // KONFIGURASI FIREBASE CLOUD DARI UI PENGATURAN
+        // ==========================================
+        function saveFirebaseConfigFromUI() {
+            const input = document.getElementById('settingFirebaseConfigInput');
+            if (!input || !input.value.trim()) {
+                showToast('Masukkan konfigurasi Firebase!', 'error');
+                return;
+            }
             try {
-                if (typeof disconnectNativeBluetoothPrinter === 'function') {
-                    disconnectNativeBluetoothPrinter();
+                let parsed;
+                const val = input.value.trim();
+                if (val.startsWith('{')) {
+                    parsed = JSON.parse(val);
+                } else {
+                    const match = val.match(/\{[\s\S]*\}/);
+                    if (match) parsed = JSON.parse(match[0]);
+                    else throw new Error("Format JSON tidak valid");
                 }
-            } catch (e) {}
 
+                if (!parsed.apiKey || !parsed.projectId) {
+                    showToast('Konfigurasi harus menyertakan apiKey dan projectId!', 'error');
+                    return;
+                }
+
+                localStorage.setItem('fortapos_custom_firebase_config', JSON.stringify(parsed));
+                firebaseConfig = parsed;
+
+                const ok = initFirebaseApp(firebaseConfig);
+                if (ok) {
+                    showToast('Konfigurasi Firebase berhasil disimpan dan terhubung!', 'success');
+                    logActivity('Konfigurasi Firebase', 'Memperbarui konfigurasi Firebase Firestore Cloud dari UI.');
+                    if (currentUser) {
+                        initAppSession();
+                    }
+                } else {
+                    showToast('Konfigurasi tersimpan, namun koneksi Firebase gagal.', 'warning');
+                }
+            } catch (err) {
+                showToast('Format JSON konfigurasi tidak valid: ' + err.message, 'error');
+            }
+        }
+
+        function resetFirebaseConfigToDefault() {
+            localStorage.removeItem('fortapos_custom_firebase_config');
+            showToast('Konfigurasi Firebase kustom direset.');
             location.reload();
         }
 
@@ -5161,37 +4824,8 @@
             document.getElementById('navUserName').innerText = currentUser.name || 'Owner';
             document.getElementById('navUserRoleBadge').innerText = currentUser.role === 'owner' ? 'Owner' : 'Karyawan';
 
-            // Penanganan Lisensi Belum Aktif Tanpa Error JavaScript
-            const isLicenseValid = isLicenseActive();
-            const inactiveBanner = document.getElementById('licenseInactiveBanner');
-            const checkoutBtn = document.getElementById('checkoutBtn');
-            const btnAdd = document.getElementById('btnOpenAddProduct');
-
-            if (!isLicenseValid && currentUser.role === 'owner' && !currentUser.isDemo) {
-                if (inactiveBanner) inactiveBanner.classList.remove('hidden');
-                if (checkoutBtn) {
-                    checkoutBtn.disabled = true;
-                    checkoutBtn.title = 'Akses kasir terkunci karena lisensi belum aktif. Silakan pilih paket atau aktifkan kode lisensi.';
-                    checkoutBtn.innerHTML = '<i class="fa-solid fa-lock mr-1.5"></i><span>Lisensi Belum Aktif</span>';
-                    checkoutBtn.onclick = () => openLicenseModal();
-                }
-                if (btnAdd) {
-                    btnAdd.title = 'Aktifkan lisensi toko terlebih dahulu';
-                }
-            } else {
-                if (inactiveBanner) inactiveBanner.classList.add('hidden');
-                if (checkoutBtn) {
-                    checkoutBtn.innerHTML = '<i class="fa-solid fa-wallet mr-1.5"></i><span>Bayar Sekarang</span>';
-                    checkoutBtn.onclick = () => openPaymentModal();
-                    checkoutBtn.disabled = (cart.length === 0);
-                    checkoutBtn.title = '';
-                }
-            }
-
             // Terapkan batasan hak akses sesuai paket lisensi aktif (Basic vs Premium)
             applyLicenseRestrictions();
-            updateNetworkStatusUI();
-            scheduleDailyReminders();
 
             // Verifikasi status Single-Device Access
             if (currentUser.role === 'owner' && !currentUser.isDemo) {
@@ -5293,7 +4927,9 @@
                                 const activeId = (data.currentActiveDevice || data.activeDeviceId || "").trim();
                                 const myDevId = getOrCreateDeviceId();
                                 if (!isPremium && activeId && activeId !== myDevId) {
-                                    showDeviceLockoutModal();
+                                    console.warn(`[Single-Device Access] Sesi diputus karena takeover oleh perangkat lain (${activeId})`);
+                                    forceLogoutCollisionSession(activeId);
+                                    return;
                                 } else {
                                     hideDeviceLockoutModal();
                                 }
@@ -5569,6 +5205,20 @@
             if (navName) navName.innerText = dbSettings.storeName || 'Nama Toko';
             updateBackupUI();
             bindShopNameInputListener();
+
+            // Populate Firebase configuration UI input
+            const fbInput = document.getElementById('settingFirebaseConfigInput');
+            if (fbInput) {
+                const savedCustomFb = localStorage.getItem('fortapos_custom_firebase_config');
+                if (savedCustomFb) {
+                    fbInput.value = savedCustomFb;
+                } else if (firebaseConfig && firebaseConfig.apiKey) {
+                    fbInput.value = JSON.stringify(firebaseConfig, null, 2);
+                } else {
+                    fbInput.value = '';
+                }
+            }
+            updateFirebaseStatusUI();
         }
 
         async function saveStoreSettings(e) {
@@ -6852,35 +6502,17 @@
                     cashier_uid: cashierUid
                 };
 
-                let isCloudSaved = false;
-                if (isFirebaseConfigured && db && navigator.onLine && (!currentUser || !currentUser.isDemo)) {
-                    try {
-                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Cloud timeout')), 3500));
-                        const savePromise = db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
-                        const docRef = await Promise.race([savePromise, timeoutPromise]);
-                        newTrx.firestoreId = docRef.id;
-                        newTrx.synced = true;
-                        isCloudSaved = true;
-                    } catch (err) {
-                        console.warn("Gagal simpan cloud langsung, transaksi masuk antrean offline:", err);
-                        isCloudSaved = false;
-                    }
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                    const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
+                    newTrx.firestoreId = docRef.id;
+                } else {
+                    newTrx.firestoreId = 'trx_' + Date.now();
+                    dbTransactions.unshift(newTrx);
+                    saveLocalTransactions();
+                    updateCustomerFilterDropdown();
+                    renderHistory();
+                    updateChart();
                 }
-
-                if (!isCloudSaved) {
-                    newTrx.firestoreId = 'trx_off_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-                    newTrx.synced = false;
-                    if (!currentUser || !currentUser.isDemo) {
-                        addTransactionToOfflineQueue(newTrx);
-                    }
-                }
-
-                dbTransactions.unshift(newTrx);
-                saveLocalTransactions();
-                updateCustomerFilterDropdown();
-                updateEmployeeFilterDropdown();
-                renderHistory();
-                updateChart();
 
                 logActivity('Transaksi Penjualan', `Berhasil memproses ${transactionId} senilai Rp ${total.toLocaleString('id-ID')} oleh ${currentUser ? currentUser.name : 'Kasir'}`);
 
@@ -8907,15 +8539,24 @@
             const dot = document.getElementById('firebaseStatusDot');
             const text = document.getElementById('firebaseStatusText');
             const banner = document.getElementById('demoModeBanner');
+            const settingBadge = document.getElementById('settingFirebaseStatusBadge');
 
             if (isFirebaseConfigured && db) {
                 if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shadow';
                 if (text) text.innerText = 'Cloud Aktif';
                 if (banner) banner.classList.add('hidden');
+                if (settingBadge) {
+                    settingBadge.innerText = 'Cloud Aktif';
+                    settingBadge.className = 'text-[11px] bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-bold';
+                }
             } else {
                 if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shadow';
                 if (text) text.innerText = 'Mode Lokal';
                 if (banner) banner.classList.remove('hidden');
+                if (settingBadge) {
+                    settingBadge.innerText = 'Mode Lokal / Offline';
+                    settingBadge.className = 'text-[11px] bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold';
+                }
             }
         }
 
