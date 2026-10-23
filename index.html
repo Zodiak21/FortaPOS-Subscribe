@@ -185,6 +185,21 @@
             animation: scannerReticlePulse 3s ease-in-out infinite;
         }
 
+        
+        /* Badge Notifikasi Pelanggan Online */
+        .badge-danger {
+            background-color: #dc2626;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6.5px;
+            border-radius: 9999px;
+            line-height: 1.1;
+            margin-left: 5px;
+            box-shadow: 0 1px 3px rgba(220, 38, 38, 0.4);
+            display: inline-block;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
@@ -728,6 +743,12 @@
                 <span>Stok & Restock</span>
                 <span id="navStockAlertBadge" class="hidden bg-rose-500 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full shadow-sm animate-pulse ml-0.5">0</span>
             </button>
+                        <!-- TAB BARU: PELANGGAN ONLINE -->
+            <button onclick="switchTab('pelanggan-online')" id="tabBtn-pelanggan-online" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-emerald-200 hover:text-white whitespace-nowrap transition flex items-center space-x-1.5 cursor-pointer relative">
+                <i class="fa-solid fa-globe"></i>
+                <span>Pelanggan Online</span>
+                <span id="online-badge" class="badge-danger" style="display:none;">0</span>
+            </button>
             <button onclick="switchTab('kategoriPelanggan')" id="tabBtn-kategoriPelanggan" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-emerald-200 hover:text-white whitespace-nowrap transition flex items-center space-x-2 cursor-pointer">
                 <i class="fa-solid fa-sliders"></i><span>Pengaturan Toko</span>
             </button>
@@ -1035,6 +1056,148 @@
                 </div>
             </div>
         </section>
+
+        <!-- TAB BARU: MANAJEMEN PESANAN ONLINE (TAB-PELANGGAN-ONLINE) -->
+        <section id="tab-pelanggan-online" class="tab-content hidden space-y-4">
+            <!-- 1. RINGKASAN COUNTER BOX -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-bell"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-slate-500 font-medium">Total Pesanan Baru</p>
+                        <h3 id="statOnlineNewOrders" class="text-xl font-extrabold text-slate-800">0</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Semua pesanan online</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-3.5 border-l-4 border-l-amber-500">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-amber-800 font-semibold">Menunggu Verifikasi</p>
+                        <h3 id="statOnlinePendingOrders" class="text-xl font-extrabold text-amber-600">0</h3>
+                        <p class="text-[11px] text-amber-700/80 mt-0.5">Perlu cek bukti transfer</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-3.5 border-l-4 border-l-emerald-500">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-emerald-800 font-semibold">Total Pesanan Selesai</p>
+                        <h3 id="statOnlineCompletedOrders" class="text-xl font-extrabold text-emerald-600">0</h3>
+                        <p class="text-[11px] text-emerald-700/80 mt-0.5">Terverifikasi & dicetak</p>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center space-x-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-xs text-slate-500 font-medium">Omset Pesanan Online</p>
+                        <h3 id="statOnlineRevenue" class="text-xl font-extrabold text-slate-800">Rp 0</h3>
+                        <p class="text-[11px] text-slate-400 mt-0.5">Tercatat ke laporan kasir</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. TOOLBAR FILTER & AKSI -->
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                <div class="flex flex-wrap items-center gap-2 flex-grow max-w-xl">
+                    <div class="relative flex-grow min-w-[200px]">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        <input type="text" id="onlineOrdersSearchInput" oninput="onOnlineOrdersSearchChanged()" placeholder="Cari nama, WhatsApp, ID pesanan..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                        <button type="button" id="clearOnlineSearchBtn" onclick="clearOnlineOrderSearch()" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-red-500 hover:text-red-700 cursor-pointer">
+                            <i class="fa-solid fa-circle-xmark text-sm"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center space-x-1.5">
+                        <label class="text-xs font-semibold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-filter text-emerald-600 mr-1"></i>Status:</label>
+                        <select id="onlineOrderStatusFilter" onchange="onOnlineOrderFilterChanged()" class="p-2 border border-slate-300 rounded-xl bg-slate-50 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none">
+                            <option value="all">Semua Status</option>
+                            <option value="pending">Menunggu Verifikasi (Pending)</option>
+                            <option value="verified">Terverifikasi (Verified)</option>
+                            <option value="expired">Expired (Kedaluwarsa)</option>
+                            <option value="rejected">Ditolak / Batal</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <button type="button" onclick="refreshOnlineOrdersFromCloud()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shadow-2xs" title="Segarkan Data Real-Time Firestore">
+                        <i class="fa-solid fa-rotate-right text-xs"></i>
+                        <span class="hidden sm:inline">Segarkan</span>
+                    </button>
+                    <button type="button" onclick="openSimulateOrderModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer" title="Simulasi Pesanan Baru Masuk untuk Uji Coba Kasir">
+                        <i class="fa-solid fa-circle-plus text-xs"></i>
+                        <span>+ Simulasi Pesanan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. TABEL TRANSAKSI ONLINE REAL-TIME -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-3.5 bg-slate-50/90 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+                            <i class="fa-solid fa-globe text-emerald-600"></i>
+                            <span>Daftar Pesanan Online Pelanggan</span>
+                        </span>
+                        <span id="onlineTableTotalCountBadge" class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">0 Pesanan</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Listener Firestore Aktif (Collection: <strong class="font-mono text-emerald-700">online_orders</strong>)</span>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs uppercase tracking-wider font-semibold">
+                                <th class="p-3">Waktu & ID Order</th>
+                                <th class="p-3">Info Pelanggan</th>
+                                <th class="p-3">Metode Pengiriman</th>
+                                <th class="p-3 text-right">Total Belanja</th>
+                                <th class="p-3 text-center">Status Pesanan</th>
+                                <th class="p-3 text-center">Aksi Kasir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="onlineOrdersTableBody" class="divide-y divide-slate-100 text-xs">
+                            <tr>
+                                <td colspan="6" class="text-center py-10 text-slate-400">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-600 block"></i>
+                                    <span>Menghubungkan ke Cloud Firestore...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- PAGINASI TABEL PESANAN ONLINE -->
+                <div id="onlineOrdersPaginationContainer" class="p-3 bg-slate-50/80 border-t border-slate-200 flex flex-wrap justify-between items-center gap-2 text-xs text-slate-600">
+                    <div id="onlineOrdersPageInfo" class="font-medium">Menampilkan data pesanan online...</div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[11px] text-slate-500">Per Halaman:</span>
+                        <select id="onlineOrdersPageSizeSelect" onchange="changeOnlineOrdersPageSize(this.value)" class="p-1 border border-slate-300 rounded bg-white font-medium outline-none">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <div class="flex items-center space-x-1" id="onlineOrdersPaginationButtons"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
 
         <!-- 3. HALAMAN PENGATURAN TOKO & MANAJEMEN KARYAWAN -->
         <section id="tab-kategoriPelanggan" class="tab-content hidden grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2516,6 +2679,135 @@
                     Masuk Kembali / Login Ulang
                 </button>
             </div>
+        </div>
+    </div>
+
+    
+    <!-- MODAL: Lihat Bukti Transfer Bank Pembayaran Online -->
+    <div id="paymentProofModal" class="fixed inset-0 bg-slate-900/80 z-[160] flex items-center justify-center hidden p-3 sm:p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col border border-slate-200">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shadow-xs">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-800">Bukti Transfer Pembayaran</h3>
+                        <p class="text-[11px] text-slate-500 font-medium">Validasi keabsahan bukti transfer pelanggan sebelum menerima pesanan</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closePaymentProofModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Detail Pesanan Singkat -->
+            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">ID Pesanan:</span>
+                    <strong id="proofModalOrderId" class="font-mono text-slate-800 font-bold">-</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Pelanggan:</span>
+                    <span id="proofModalCustomerName" class="font-semibold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Total Belanja:</span>
+                    <strong id="proofModalOrderTotal" class="text-emerald-700 text-sm font-extrabold">Rp 0</strong>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-500">Metode / Bank:</span>
+                    <span id="proofModalBankName" class="font-medium text-slate-700">-</span>
+                </div>
+            </div>
+
+            <!-- Gambar Resolusi Penuh Base64 -->
+            <div class="flex-grow overflow-y-auto p-2 bg-slate-900 rounded-2xl flex items-center justify-center min-h-[220px] max-h-[50vh] border border-slate-800 shadow-inner">
+                <img id="paymentProofImg" src="" alt="Bukti Transfer Pembayaran" class="max-h-[46vh] max-w-full object-contain rounded-lg shadow-md transition hover:scale-105 duration-200">
+                <div id="paymentProofEmptyFallback" class="hidden text-center text-slate-400 text-xs py-8 space-y-1">
+                    <i class="fa-solid fa-image-slash text-3xl mb-1 text-slate-500 block"></i>
+                    <p>Gambar bukti transfer tidak tersedia atau format tidak didukung.</p>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi di Modal Bukti Transfer -->
+            <div class="pt-2 border-t border-slate-200 flex flex-wrap gap-2 justify-end">
+                <button type="button" onclick="closePaymentProofModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer">
+                    Tutup
+                </button>
+                <button type="button" id="proofModalRejectBtn" onclick="rejectCurrentProofOrder()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer">
+                    <i class="fa-solid fa-ban"></i>
+                    <span>Tolak & Batalkan</span>
+                </button>
+                <button type="button" id="proofModalAcceptBtn" onclick="acceptCurrentProofOrder()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md cursor-pointer">
+                    <i class="fa-solid fa-check-double"></i>
+                    <span>Terima Pembayaran</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Simulasi Pesanan Online Baru Masuk (Testing & Demo) -->
+    <div id="simulateOrderModal" class="fixed inset-0 bg-slate-900/80 z-[160] flex items-center justify-center hidden p-3 sm:p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto border border-slate-200">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shadow-xs">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base text-slate-800">Simulasi Pesanan Online Masuk</h3>
+                        <p class="text-[11px] text-slate-500 font-medium">Uji coba alur real-time pemesanan online kasir FortaPOS</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeSimulateOrderModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="simulateOrderForm" onsubmit="handleSimulateOrderSubmit(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Nama Pelanggan</label>
+                    <input type="text" id="simCustomerName" required value="Budi Hermawan" class="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 outline-none focus:ring-1 focus:ring-emerald-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Nomor WhatsApp Pelanggan</label>
+                    <input type="text" id="simCustomerPhone" required value="081234567890" class="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 outline-none focus:ring-1 focus:ring-emerald-500 font-mono">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Metode Pengiriman</label>
+                        <select id="simDeliveryMethod" class="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 outline-none focus:ring-1 focus:ring-emerald-500">
+                            <option value="Diantar">Diantar (Delivery)</option>
+                            <option value="Ambil Sendiri">Ambil Sendiri (Pickup)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-slate-600 mb-1">Metode Pembayaran</label>
+                        <select id="simPaymentMethod" class="w-full p-2.5 border border-slate-300 rounded-xl bg-slate-50 outline-none focus:ring-1 focus:ring-emerald-500">
+                            <option value="Transfer Bank">Transfer Bank (Pending)</option>
+                            <option value="Cash">Cash / Ambil Sendiri (Verified)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Alamat Pengiriman (jika diantar)</label>
+                    <textarea id="simCustomerAddress" rows="2" class="w-full p-2 border border-slate-300 rounded-xl bg-slate-50 outline-none focus:ring-1 focus:ring-emerald-500">Jl. Mawar Indah No. 88, RT 02/RW 05</textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-600 mb-1">Pilih Produk Contoh (Centang yang dibeli):</label>
+                    <div id="simOrderProductsList" class="p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-36 overflow-y-auto space-y-1.5">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <div class="pt-2 border-t flex justify-end space-x-2">
+                    <button type="button" onclick="closeSimulateOrderModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold cursor-pointer">Batal</button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow transition cursor-pointer">
+                        <i class="fa-solid fa-paper-plane mr-1"></i>Kirim Pesanan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -4713,6 +5005,7 @@
             }
 
             // 3. Putuskan listeners realtime Firestore
+            if (unsubOnlineOrders) { try { unsubOnlineOrders(); } catch(e) {} unsubOnlineOrders = null; }
             unsubscribers.forEach(unsub => { try { unsub(); } catch (e) {} });
             unsubscribers = [];
 
@@ -4879,6 +5172,9 @@
                 updateEmployeeFilterDropdown();
                 setTimeout(() => { checkAndRunDailyCloudBackup(); }, 1500);
             }
+
+            // Inisialisasi Real-Time Listener Pesanan Pelanggan Online
+            initOnlineOrdersListener();
 
             if (isFirebaseConfigured && db) {
                 const unsubStore = db.collection('stores').doc(currentStoreId).onSnapshot(
@@ -5109,6 +5405,8 @@
             } else if (tabId === 'riwayat') {
                 renderHistory();
                 updateChart();
+            } else if (tabId === 'pelanggan-online') {
+                renderOnlineOrdersTable();
             }
         }
 
@@ -9273,6 +9571,981 @@
             showToast(`Membuka WhatsApp Owner (${rawPhone}) & mengunduh PDF laporan.`);
             logActivity('Laporan WA', `Mengirim rekap laporan bulanan ${rep.periodLabel} ke WhatsApp Owner (${rawPhone}).`);
         }
+
+    
+        // ==============================================================
+        // MANAJEMEN PESANAN PELANGGAN ONLINE (FIRESTORE v8 COMPAT SDK)
+        // ==============================================================
+        let unsubOnlineOrders = null;
+        let onlineOrdersList = [];
+        let currentViewingProofOrder = null;
+        let onlineOrdersCurrentPage = 1;
+        let onlineOrdersPageSize = 20;
+        let onlineOrderStatusFilter = 'all';
+        let onlineOrdersSearchKeyword = '';
+        let isInitialOnlineOrdersLoad = true;
+
+        // Sample Base64 image placeholder for transfer receipt
+        const SAMPLE_BASE64_PROOF = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='600' viewBox='0 0 400 600'><rect width='400' height='600' fill='%23f8fafc'/><rect x='20' y='20' width='360' height='560' rx='16' fill='%23ffffff' stroke='%23cbd5e1' stroke-width='2'/><circle cx='200' cy='80' r='30' fill='%2310b981'/><path d='M190 80l7 7 15-15' stroke='%23ffffff' stroke-width='4' fill='none' stroke-linecap='round'/><text x='200' y='140' font-family='sans-serif' font-size='18' font-weight='bold' text-anchor='middle' fill='%230f172a'>TRANSFER BERHASIL</text><text x='200' y='165' font-family='sans-serif' font-size='12' text-anchor='middle' fill='%2364748b'>BANK CENTRAL ASIA (BCA)</text><line x1='40' y1='185' x2='360' y2='185' stroke='%23e2e8f0' stroke-dasharray='4'/><text x='40' y='220' font-family='sans-serif' font-size='12' fill='%2364748b'>Tanggal / Waktu</text><text x='360' y='220' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%230f172a'>Hari Ini</text><text x='40' y='255' font-family='sans-serif' font-size='12' fill='%2364748b'>Penerima</text><text x='360' y='255' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%230f172a'>Rekening Toko POS</text><text x='40' y='290' font-family='sans-serif' font-size='12' fill='%2364748b'>Status</text><text x='360' y='290' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%2310b981'>BERHASIL / LUNAS</text><line x1='40' y1='320' x2='360' y2='320' stroke='%23e2e8f0' stroke-dasharray='4'/><rect x='40' y='340' width='320' height='70' rx='12' fill='%23ecfdf5' stroke='%236ee7b7'/><text x='60' y='370' font-family='sans-serif' font-size='11' fill='%23065f46'>TOTAL TRANSFER</text><text x='60' y='395' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23047857'>VALID PAYMENT</text><text x='200' y='460' font-family='sans-serif' font-size='11' text-anchor='middle' fill='%2394a3b8'>No. Referensi: 20261023998811</text><text x='200' y='520' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23cbd5e1'>BUKTI TRANSFER ELEKTRONIK RESMI</text></svg>";
+
+        function playBeepSound() {
+            playBeep('success');
+        }
+        window.playBeepSound = playBeepSound;
+
+        // Inisialisasi Real-time Listener Koleksi online_orders Firestore SDK v8
+        function initOnlineOrdersListener() {
+            if (unsubOnlineOrders) {
+                try { unsubOnlineOrders(); } catch (e) {}
+                unsubOnlineOrders = null;
+            }
+
+            isInitialOnlineOrdersLoad = true;
+
+            if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                try {
+                    // Filter dokumen order berdasarkan storeId yang aktif
+                    const ordersQuery = db.collection("online_orders").where("storeId", "==", currentStoreId);
+                    unsubOnlineOrders = ordersQuery.onSnapshot(
+                        snapshot => {
+                            let pendingCount = 0;
+
+                            snapshot.docChanges().forEach(change => {
+                                const docData = change.doc.data();
+                                const docId = change.doc.id;
+
+                                // 3a. Jika terdeteksi pesanan masuk dengan status "pending", bunyikan audio feedback beep & naikkan badge
+                                if (change.type === 'added' && docData.status === 'pending' && !isInitialOnlineOrdersLoad) {
+                                    playBeepSound();
+                                    triggerHapticFeedback(120);
+                                    showToast(`Pesanan Online Baru #${docData.orderNumber || docId.slice(-6)} dari ${docData.customerName || 'Pelanggan'}!`, 'info');
+                                }
+
+                                // 3b. Jika pesanan masuk memiliki status "verified" (karena pelanggan pilih Cash/Ambil Sendiri atau diverifikasi):
+                                if ((change.type === 'added' || change.type === 'modified') && docData.status === 'verified') {
+                                    if (!docData.isPrinted) {
+                                        cetakStrukOnlineOtomatis(docId, docData);
+                                    }
+                                    if (!docData.isCommittedToTransactions) {
+                                        commitOnlineOrderToTransactions(docId, docData);
+                                    }
+                                }
+
+                                // 4. LOGIKA PENGEMBALIAN STOK OTOMATIS (EXPIRED ORDER WATCHER)
+                                if ((change.type === 'added' || change.type === 'modified') && docData.status === 'expired') {
+                                    if (!docData.isStockRestored) {
+                                        rollbackExpiredOnlineOrderStock(docId, docData);
+                                    }
+                                }
+                            });
+
+                            isInitialOnlineOrdersLoad = false;
+
+                            let orders = [];
+                            snapshot.forEach(doc => {
+                                const d = doc.data();
+                                orders.push({ firestoreId: doc.id, id: doc.id, ...d });
+                                if (d.status === 'pending') {
+                                    pendingCount++;
+                                }
+                            });
+
+                            orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+                            onlineOrdersList = orders;
+
+                            updateOnlineOrdersBadge(pendingCount);
+                            renderOnlineOrdersTable();
+                            updateOnlineOrdersCounters();
+                        },
+                        err => {
+                            console.warn("Firestore online_orders onSnapshot peringatan:", err);
+                            loadLocalOnlineOrders();
+                        }
+                    );
+                    unsubscribers.push(unsubOnlineOrders);
+                } catch (e) {
+                    console.warn("Inisialisasi Firestore online_orders fallback lokal:", e);
+                    loadLocalOnlineOrders();
+                }
+            } else {
+                loadLocalOnlineOrders();
+            }
+        }
+
+        function loadLocalOnlineOrders() {
+            let saved = [];
+            try {
+                const raw = localStorage.getItem('fortapos_online_orders');
+                if (raw) saved = JSON.parse(raw);
+            } catch (e) {
+                saved = [];
+            }
+
+            // Jika belum ada data lokal, buat beberapa pesanan demo online
+            if (!saved || saved.length === 0) {
+                saved = getInitialDemoOnlineOrders();
+                localStorage.setItem('fortapos_online_orders', JSON.stringify(saved));
+            }
+
+            onlineOrdersList = saved;
+            let pendingCount = 0;
+            onlineOrdersList.forEach(o => {
+                if (o.status === 'pending') pendingCount++;
+            });
+            updateOnlineOrdersBadge(pendingCount);
+            renderOnlineOrdersTable();
+            updateOnlineOrdersCounters();
+        }
+
+        function saveLocalOnlineOrders() {
+            localStorage.setItem('fortapos_online_orders', JSON.stringify(onlineOrdersList));
+            let pendingCount = 0;
+            onlineOrdersList.forEach(o => {
+                if (o.status === 'pending') pendingCount++;
+            });
+            updateOnlineOrdersBadge(pendingCount);
+            updateOnlineOrdersCounters();
+        }
+
+        function getInitialDemoOnlineOrders() {
+            const now = Date.now();
+            return [
+                {
+                    firestoreId: 'onl_demo_101',
+                    id: 'onl_demo_101',
+                    orderNumber: 'ORD-ONL-101',
+                    storeId: currentStoreId || 'HJN-DEMO',
+                    customerName: 'Ahmad Fauzi',
+                    customerPhone: '081298765432',
+                    customerAddress: 'Jl. Melati Blok C2 No. 14, Jakarta',
+                    deliveryMethod: 'Diantar',
+                    paymentMethod: 'Transfer Bank',
+                    bankName: 'BCA (Virtual Account)',
+                    paymentProofUrl: SAMPLE_BASE64_PROOF,
+                    status: 'pending',
+                    isPrinted: false,
+                    isCommittedToTransactions: false,
+                    isStockRestored: false,
+                    createdAt: new Date(now - 1200000).toISOString(),
+                    items: [
+                        { name: 'Minyak Goreng Bimoli 1L', qty: 2, sellPrice: 18500, buyPrice: 15000 },
+                        { name: 'Beras Pandan Wangi 5kg', qty: 1, sellPrice: 78000, buyPrice: 65000 }
+                    ],
+                    subtotal: 115000,
+                    discount: 0,
+                    total: 115000
+                },
+                {
+                    firestoreId: 'onl_demo_102',
+                    id: 'onl_demo_102',
+                    orderNumber: 'ORD-ONL-102',
+                    storeId: currentStoreId || 'HJN-DEMO',
+                    customerName: 'Dewi Lestari',
+                    customerPhone: '085711223344',
+                    customerAddress: 'Ambil di Toko',
+                    deliveryMethod: 'Ambil Sendiri',
+                    paymentMethod: 'Cash',
+                    bankName: 'Tunai di Kasir',
+                    paymentProofUrl: '',
+                    status: 'verified',
+                    isPrinted: true,
+                    isCommittedToTransactions: true,
+                    isStockRestored: false,
+                    createdAt: new Date(now - 3600000).toISOString(),
+                    items: [
+                        { name: 'Indomie Goreng Spesial', qty: 5, sellPrice: 3200, buyPrice: 2500 },
+                        { name: 'Gula Pasir Gulaku 1kg', qty: 2, sellPrice: 16500, buyPrice: 13500 }
+                    ],
+                    subtotal: 49000,
+                    discount: 0,
+                    total: 49000
+                },
+                {
+                    firestoreId: 'onl_demo_103',
+                    id: 'onl_demo_103',
+                    orderNumber: 'ORD-ONL-103',
+                    storeId: currentStoreId || 'HJN-DEMO',
+                    customerName: 'Rudi Hartono',
+                    customerPhone: '087899001122',
+                    customerAddress: 'Jl. Anggrek No. 5',
+                    deliveryMethod: 'Diantar',
+                    paymentMethod: 'Transfer Bank',
+                    bankName: 'Mandiri',
+                    paymentProofUrl: '',
+                    status: 'expired',
+                    isPrinted: false,
+                    isCommittedToTransactions: false,
+                    isStockRestored: true,
+                    createdAt: new Date(now - 86400000).toISOString(),
+                    items: [
+                        { name: 'Kopi Kapal Api Spesial Mix', qty: 3, sellPrice: 2000, buyPrice: 1200 }
+                    ],
+                    subtotal: 6000,
+                    discount: 0,
+                    total: 6000
+                }
+            ];
+        }
+
+        // Update Badge Notifikasi Navigasi
+        function updateOnlineOrdersBadge(pendingCount) {
+            const badge = document.getElementById('online-badge');
+            if (!badge) return;
+            if (pendingCount > 0) {
+                badge.style.display = 'inline-block';
+                badge.innerText = pendingCount;
+            } else {
+                badge.style.display = 'none';
+                badge.innerText = '0';
+            }
+        }
+
+        // Update Counter Box di Tab Pelanggan Online
+        function updateOnlineOrdersCounters() {
+            let totalNew = onlineOrdersList.length;
+            let pendingCount = 0;
+            let completedCount = 0;
+            let totalRev = 0;
+
+            onlineOrdersList.forEach(o => {
+                if (o.status === 'pending') pendingCount++;
+                if (o.status === 'verified' || o.status === 'completed') {
+                    completedCount++;
+                    totalRev += (Number(o.total) || 0);
+                }
+            });
+
+            const elNew = document.getElementById('statOnlineNewOrders');
+            const elPend = document.getElementById('statOnlinePendingOrders');
+            const elComp = document.getElementById('statOnlineCompletedOrders');
+            const elRev = document.getElementById('statOnlineRevenue');
+            const elTotalBadge = document.getElementById('onlineTableTotalCountBadge');
+
+            if (elNew) elNew.innerText = totalNew;
+            if (elPend) elPend.innerText = pendingCount;
+            if (elComp) elComp.innerText = completedCount;
+            if (elRev) elRev.innerText = 'Rp ' + totalRev.toLocaleString('id-ID');
+            if (elTotalBadge) elTotalBadge.innerText = `${onlineOrdersList.length} Pesanan`;
+        }
+
+        function onOnlineOrderFilterChanged() {
+            const select = document.getElementById('onlineOrderStatusFilter');
+            onlineOrderStatusFilter = select ? select.value : 'all';
+            onlineOrdersCurrentPage = 1;
+            renderOnlineOrdersTable();
+        }
+
+        function onOnlineOrdersSearchChanged() {
+            const input = document.getElementById('onlineOrdersSearchInput');
+            const clearBtn = document.getElementById('clearOnlineSearchBtn');
+            if (input && clearBtn) {
+                if (input.value.trim().length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            }
+            onlineOrdersSearchKeyword = (input ? input.value : '').toLowerCase().trim();
+            onlineOrdersCurrentPage = 1;
+            renderOnlineOrdersTable();
+        }
+
+        function clearOnlineOrderSearch() {
+            const input = document.getElementById('onlineOrdersSearchInput');
+            if (input) input.value = '';
+            const clearBtn = document.getElementById('clearOnlineSearchBtn');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            onlineOrdersSearchKeyword = '';
+            onlineOrdersCurrentPage = 1;
+            renderOnlineOrdersTable();
+        }
+
+        function refreshOnlineOrdersFromCloud() {
+            showToast('Menyegarkan data pesanan online dari cloud...', 'info');
+            initOnlineOrdersListener();
+        }
+
+        function changeOnlineOrdersPageSize(val) {
+            onlineOrdersPageSize = parseInt(val) || 20;
+            onlineOrdersCurrentPage = 1;
+            renderOnlineOrdersTable();
+        }
+
+        // Render Tabel Transaksi Online Real-time
+        function renderOnlineOrdersTable() {
+            const tbody = document.getElementById('onlineOrdersTableBody');
+            if (!tbody) return;
+
+            let filtered = [...onlineOrdersList];
+
+            // Filter status
+            if (onlineOrderStatusFilter !== 'all') {
+                filtered = filtered.filter(o => o.status === onlineOrderStatusFilter);
+            }
+
+            // Filter keyword pencarian
+            if (onlineOrdersSearchKeyword) {
+                filtered = filtered.filter(o => {
+                    const name = (o.customerName || '').toLowerCase();
+                    const phone = (o.customerPhone || '').toLowerCase();
+                    const id = (o.orderNumber || o.firestoreId || '').toLowerCase();
+                    const addr = (o.customerAddress || '').toLowerCase();
+                    return name.includes(onlineOrdersSearchKeyword) || 
+                           phone.includes(onlineOrdersSearchKeyword) || 
+                           id.includes(onlineOrdersSearchKeyword) ||
+                           addr.includes(onlineOrdersSearchKeyword);
+                });
+            }
+
+            const total = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(total / onlineOrdersPageSize));
+            if (onlineOrdersCurrentPage > totalPages) onlineOrdersCurrentPage = totalPages;
+            if (onlineOrdersCurrentPage < 1) onlineOrdersCurrentPage = 1;
+
+            const startIndex = (onlineOrdersCurrentPage - 1) * onlineOrdersPageSize;
+            const endIndex = Math.min(startIndex + onlineOrdersPageSize, total);
+            const paged = filtered.slice(startIndex, endIndex);
+
+            const pageInfo = document.getElementById('onlineOrdersPageInfo');
+            if (pageInfo) {
+                if (total === 0) {
+                    pageInfo.innerText = 'Tidak ada pesanan online.';
+                } else {
+                    pageInfo.innerText = `Menampilkan ${startIndex + 1}-${endIndex} dari ${total} pesanan (Hal ${onlineOrdersCurrentPage}/${totalPages})`;
+                }
+            }
+
+            renderOnlineOrdersPagination(totalPages);
+
+            if (paged.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-12 text-slate-400">
+                            <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-slate-300 block"></i>
+                            <p class="font-semibold text-slate-600">Belum ada pesanan online yang sesuai.</p>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tekan "+ Simulasi Pesanan" untuk menguji alur kasir online.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = paged.map(order => {
+                const orderId = order.firestoreId || order.id;
+                const orderNum = order.orderNumber || ('ORD-' + orderId.slice(-6).toUpperCase());
+                const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleString('id-ID') : '-';
+
+                // WhatsApp clean URL
+                const rawPhone = order.customerPhone || '';
+                const cleanPhone = sanitizeWhatsappNumber(rawPhone);
+                const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(order.customerName || 'Pelanggan')},%20terkait%20pesanan%20Anda%20${encodeURIComponent(orderNum)}%20di%20${encodeURIComponent(dbSettings.storeName || 'Toko')}:` : '#';
+
+                // Status Badge
+                let statusBadge = '';
+                if (order.status === 'pending') {
+                    statusBadge = `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span><span>Menunggu Verifikasi</span></span>`;
+                } else if (order.status === 'verified') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><i class="fa-solid fa-check text-[10px]"></i><span>Terverifikasi (Diproses)</span></span>`;
+                } else if (order.status === 'expired') {
+                    statusBadge = `<span class="bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-clock text-[10px]"></i><span>Expired (Stok Rollback)</span></span>`;
+                } else if (order.status === 'rejected') {
+                    statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-xmark text-[10px]"></i><span>Ditolak & Batal</span></span>`;
+                } else {
+                    statusBadge = `<span class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block">${escapeHtml(order.status)}</span>`;
+                }
+
+                // Delivery & Payment Badge
+                const isDelivery = (order.deliveryMethod || '').toLowerCase() === 'diantar';
+                const deliveryBadge = isDelivery
+                    ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-motorcycle text-[10px]"></i><span>Diantar (Delivery)</span></span>`
+                    : `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-store text-[10px]"></i><span>Ambil Sendiri</span></span>`;
+
+                const isBankTransfer = (order.paymentMethod || '').toLowerCase().includes('transfer');
+                const paymentBadge = isBankTransfer
+                    ? `<span class="text-indigo-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-building-columns text-[10px] mr-1"></i>${escapeHtml(order.bankName || 'Transfer Bank')}</span>`
+                    : `<span class="text-emerald-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-money-bill-wave text-[10px] mr-1"></i>Tunai (Cash di Toko)</span>`;
+
+                // Items summary string
+                const itemsSummary = (order.items || []).map(i => `${i.qty}x ${i.name}`).join(', ');
+
+                // Action buttons
+                const hasProof = !!(order.paymentProofUrl && order.paymentProofUrl.trim().length > 10);
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="p-3">
+                            <div class="font-mono font-bold text-slate-900">${escapeHtml(orderNum)}</div>
+                            <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(dateStr)}</div>
+                            ${order.isPrinted ? `<span class="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-flex items-center gap-1 mt-1"><i class="fa-solid fa-print text-[8px]"></i>Tercetak</span>` : ''}
+                        </td>
+                        <td class="p-3">
+                            <div class="font-bold text-slate-800 text-xs">${escapeHtml(order.customerName || 'Pelanggan')}</div>
+                            ${rawPhone ? `
+                                <a href="${waUrl}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-mono text-[11px] font-semibold inline-flex items-center gap-1 mt-0.5 hover:underline" title="Chat WhatsApp Pelanggan">
+                                    <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                                    <span>${escapeHtml(rawPhone)}</span>
+                                </a>
+                            ` : '<span class="text-slate-400 text-[11px]">Tanpa WhatsApp</span>'}
+                            ${order.customerAddress ? `<div class="text-[10px] text-slate-400 truncate max-w-[160px] mt-0.5" title="${escapeHtml(order.customerAddress)}"><i class="fa-solid fa-location-dot text-[9px] mr-0.5"></i>${escapeHtml(order.customerAddress)}</div>` : ''}
+                        </td>
+                        <td class="p-3">
+                            ${deliveryBadge}
+                            ${paymentBadge}
+                        </td>
+                        <td class="p-3 text-right">
+                            <div class="font-extrabold text-emerald-600 text-sm">Rp ${(Number(order.total) || 0).toLocaleString('id-ID')}</div>
+                            <div class="text-[10px] text-slate-400 truncate max-w-[150px] mt-0.5 text-right" title="${escapeHtml(itemsSummary)}">${escapeHtml(itemsSummary || 'Rincian produk')}</div>
+                        </td>
+                        <td class="p-3 text-center">
+                            ${statusBadge}
+                        </td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                ${isBankTransfer ? `
+                                    <button type="button" onclick="viewPaymentProof('${orderId}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Lihat Bukti Transfer Pelanggan">
+                                        <i class="fa-solid fa-image text-[11px]"></i>
+                                        <span>Lihat Bukti</span>
+                                    </button>
+                                ` : ''}
+
+                                ${order.status === 'pending' ? `
+                                    <button type="button" onclick="acceptOnlineOrderPayment('${orderId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs" title="Terima Pembayaran & Otomatis Cetak Struk">
+                                        <i class="fa-solid fa-check text-[11px]"></i>
+                                        <span>Terima</span>
+                                    </button>
+                                    <button type="button" onclick="rejectOnlineOrder('${orderId}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="Tolak Bukti / Batalkan Pesanan">
+                                        <i class="fa-solid fa-xmark text-[11px]"></i>
+                                        <span>Tolak</span>
+                                    </button>
+                                ` : ''}
+
+                                ${(order.status === 'verified' || order.status === 'completed') ? `
+                                    <button type="button" onclick="reprintOnlineOrderReceipt('${orderId}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Cetak Ulang Struk Thermal ESC/POS">
+                                        <i class="fa-solid fa-print text-[11px]"></i>
+                                        <span>Cetak Ulang</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderOnlineOrdersPagination(totalPages) {
+            const btnContainer = document.getElementById('onlineOrdersPaginationButtons');
+            if (!btnContainer) return;
+
+            let html = `
+                <button onclick="goToOnlineOrdersPage(${onlineOrdersCurrentPage - 1})" ${onlineOrdersCurrentPage <= 1 ? 'disabled' : ''} class="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+            `;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (totalPages > 6 && Math.abs(i - onlineOrdersCurrentPage) > 2 && i !== 1 && i !== totalPages) {
+                    if (i === 2 || i === totalPages - 1) html += `<span class="px-1 text-slate-400">...</span>`;
+                    continue;
+                }
+                html += `
+                    <button onclick="goToOnlineOrdersPage(${i})" class="px-2.5 py-1 border rounded text-xs font-semibold cursor-pointer ${i === onlineOrdersCurrentPage ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' : 'border-slate-300 bg-white hover:bg-slate-100 text-slate-700'}">
+                        ${i}
+                    </button>
+                `;
+            }
+
+            html += `
+                <button onclick="goToOnlineOrdersPage(${onlineOrdersCurrentPage + 1})" ${onlineOrdersCurrentPage >= totalPages ? 'disabled' : ''} class="px-2 py-1 border border-slate-300 rounded bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+            `;
+            btnContainer.innerHTML = html;
+        }
+
+        function goToOnlineOrdersPage(p) {
+            onlineOrdersCurrentPage = p;
+            renderOnlineOrdersTable();
+        }
+
+        // ==========================================
+        // 4. LOGIKA PENGEMBALIAN STOK OTOMATIS (EXPIRED ORDER WATCHER)
+        // ==========================================
+        async function rollbackExpiredOnlineOrderStock(orderId, orderData) {
+            console.log(`[Expired Order Watcher] Menjalankan rollback stok untuk pesanan expired #${orderData.orderNumber || orderId}...`);
+            try {
+                const items = orderData.items || [];
+                for (const item of items) {
+                    const qtyToReturn = Number(item.qty) || 1;
+                    const prod = dbProducts.find(p => 
+                        (item.firestoreId && p.firestoreId === item.firestoreId) || 
+                        (item.productId && p.firestoreId === item.productId) ||
+                        (item.barcode && p.barcode === item.barcode) ||
+                        (item.name && p.name.toLowerCase() === item.name.toLowerCase())
+                    );
+
+                    if (prod) {
+                        const newStock = (Number(prod.stock) || 0) + qtyToReturn;
+                        prod.stock = newStock;
+
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
+                                stock: newStock
+                            });
+                        }
+                    }
+                }
+
+                if (!isFirebaseConfigured || (currentUser && currentUser.isDemo)) {
+                    saveLocalProducts();
+                }
+                renderStockTable();
+                updateStockAlertBadges();
+
+                // Tandai isStockRestored: true di Firestore agar tidak dipanggil berulang-ulang
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                    await db.collection("online_orders").doc(orderId).update({
+                        isStockRestored: true,
+                        stockRestoredAt: new Date().toISOString()
+                    });
+                } else {
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        localOrd.isStockRestored = true;
+                        saveLocalOnlineOrders();
+                    }
+                }
+
+                showToast(`Pesanan #${orderData.orderNumber || orderId.slice(-6)} expired. Stok barang otomatis dikembalikan ke etalase!`, 'info');
+                logActivity('Rollback Stok Otomatis', `Mengembalikan stok produk untuk pesanan online #${orderData.orderNumber || orderId} yang berstatus expired.`);
+            } catch (err) {
+                console.error("Gagal rollback stok pesanan online expired:", err);
+            }
+        }
+
+        // ==========================================
+        // 5. FITUR AUTO-PRINT DAN COMMITTING TRANSAKSI UTAMA
+        // ==========================================
+        async function cetakStrukOnlineOtomatis(orderId, order, isManualReprint = false) {
+            if (order.isPrinted && !isManualReprint) {
+                return;
+            }
+
+            console.log(`[Auto-Print] Memproses cetak struk pesanan online #${order.orderNumber || orderId}...`);
+
+            const orderTrx = {
+                id: order.orderNumber || ('ONL-' + (orderId.slice(-6).toUpperCase())),
+                date: order.createdAt || new Date().toISOString(),
+                items: (order.items || []).map(i => ({
+                    name: i.name,
+                    qty: Number(i.qty) || 1,
+                    sellPrice: Number(i.sellPrice || i.price) || 0,
+                    buyPrice: Number(i.buyPrice) || 0
+                })),
+                subtotal: Number(order.subtotal) || Number(order.total) || 0,
+                discount: Number(order.discount) || 0,
+                total: Number(order.total) || 0,
+                cash: Number(order.total) || 0,
+                change: 0,
+                customer: `${order.customerName || 'Pelanggan'} (${order.deliveryMethod || 'Online'})`,
+                cashier: 'Kasir Online'
+            };
+
+            const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
+            const hasWebPrinter = bluetoothCharacteristic || usbDevice;
+
+            let printSuccess = false;
+
+            if (isNativeConnected || hasWebPrinter) {
+                try {
+                    const buffer = generateEscPosBuffer(orderTrx);
+                    await sendRawToPrinter(buffer);
+                    printSuccess = true;
+                    showToast(`Struk Pesanan Online #${orderTrx.id} BERHASIL DICETAK OTOMATIS!`, 'success');
+                    logActivity('Cetak Otomatis Online', `Struk pesanan online #${orderTrx.id} dicetak ke printer thermal.`);
+                } catch (e) {
+                    console.warn("Gagal cetak otomatis thermal:", e);
+                    showToast(`Cetak thermal order #${orderTrx.id} tertunda: ${e.message}`, 'warning');
+                }
+            } else {
+                if (isManualReprint) {
+                    pendingTransactionForPrint = orderTrx;
+                    showReceiptPreviewModal(orderTrx);
+                } else {
+                    showToast(`Pesanan #${orderTrx.id} terverifikasi. Sambungkan printer thermal untuk auto-print!`, 'info');
+                }
+            }
+
+            // Mekanisme Penguncian Cetak: update isPrinted: true agar printer tidak mencetak berulang-ulang
+            try {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                    await db.collection("online_orders").doc(orderId).update({
+                        isPrinted: true,
+                        printedAt: new Date().toISOString()
+                    });
+                } else {
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        localOrd.isPrinted = true;
+                        saveLocalOnlineOrders();
+                        renderOnlineOrdersTable();
+                    }
+                }
+            } catch (err) {
+                console.warn("Gagal mengunci isPrinted:", err);
+            }
+        }
+
+        // Salin skema objek belanjaan ke /transactions
+        async function commitOnlineOrderToTransactions(orderId, order) {
+            if (order.isCommittedToTransactions) {
+                return;
+            }
+
+            console.log(`[Committing Transaksi] Menyalin data pesanan online #${order.orderNumber || orderId} ke koleksi utama /transactions...`);
+
+            try {
+                const transactionId = order.orderNumber || ('TRX-ONL-' + Date.now().toString().slice(-6));
+                const newTrx = {
+                    storeId: currentStoreId,
+                    id: transactionId,
+                    onlineOrderId: orderId,
+                    date: order.createdAt || new Date().toISOString(),
+                    items: JSON.parse(JSON.stringify(order.items || [])),
+                    subtotal: Number(order.subtotal) || Number(order.total) || 0,
+                    discount: Number(order.discount) || 0,
+                    total: Number(order.total) || 0,
+                    cash: Number(order.total) || 0,
+                    change: 0,
+                    paymentMethod: order.paymentMethod || 'Online',
+                    deliveryMethod: order.deliveryMethod || 'Ambil Sendiri',
+                    customer: `${order.customerName || 'Pelanggan'} (Online)`,
+                    customerPhone: order.customerPhone || '',
+                    customerAddress: order.customerAddress || '',
+                    cashier: 'Pesanan Online',
+                    cashier_uid: 'online_order_sync',
+                    isOnlineOrder: true
+                };
+
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                    const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
+                    newTrx.firestoreId = docRef.id;
+
+                    await db.collection("online_orders").doc(orderId).update({
+                        isCommittedToTransactions: true,
+                        committedAt: new Date().toISOString(),
+                        transactionDocId: docRef.id
+                    });
+                } else {
+                    newTrx.firestoreId = 'trx_onl_' + Date.now();
+                    dbTransactions.unshift(newTrx);
+                    saveLocalTransactions();
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        localOrd.isCommittedToTransactions = true;
+                        saveLocalOnlineOrders();
+                    }
+                    renderHistory();
+                    updateChart();
+                }
+
+                logActivity('Transaksi Online Masuk', `Transaksi #${transactionId} (${order.customerName}) otomatis dibukukan ke omset kasir.`);
+                updateOnlineOrdersCounters();
+            } catch (err) {
+                console.error("Gagal committing transaksi online ke riwayat kasir:", err);
+            }
+        }
+
+        // Aksi Kasir: Terima Pembayaran
+        async function acceptOnlineOrderPayment(orderId) {
+            showCustomConfirm(
+                'Terima Pembayaran Online',
+                'Konfirmasi bahwa pembayaran transfer pesanan ini VALID? Status akan diubah menjadi TERVERIFIKASI dan struk akan otomatis dicetak.',
+                async () => {
+                    try {
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                            await db.collection("online_orders").doc(orderId).update({
+                                status: 'verified',
+                                verifiedAt: new Date().toISOString(),
+                                verifiedBy: currentUser ? currentUser.name : 'Kasir'
+                            });
+                        } else {
+                            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                            if (ord) {
+                                ord.status = 'verified';
+                                ord.verifiedAt = new Date().toISOString();
+                                ord.verifiedBy = currentUser ? currentUser.name : 'Kasir';
+                                saveLocalOnlineOrders();
+                                cetakStrukOnlineOtomatis(orderId, ord);
+                                commitOnlineOrderToTransactions(orderId, ord);
+                                renderOnlineOrdersTable();
+                            }
+                        }
+                        showToast('Pembayaran berhasil diverifikasi! Struk dicetak & omset tercatat.', 'success');
+                        closePaymentProofModal();
+                    } catch (err) {
+                        showToast('Gagal memverifikasi pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        // Aksi Kasir: Tolak & Batalkan Pesanan
+        async function rejectOnlineOrder(orderId) {
+            showCustomConfirm(
+                'Tolak & Batalkan Pesanan',
+                'Apakah Anda yakin ingin menolak pesanan ini (misal bukti transfer palsu)? Status akan diubah menjadi DITOLAK dan stok barang akan otomatis dikembalikan.',
+                async () => {
+                    try {
+                        const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                        if (ord && !ord.isStockRestored) {
+                            await rollbackExpiredOnlineOrderStock(orderId, ord);
+                        }
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                            await db.collection("online_orders").doc(orderId).update({
+                                status: 'rejected',
+                                rejectedAt: new Date().toISOString(),
+                                rejectedBy: currentUser ? currentUser.name : 'Kasir'
+                            });
+                        } else {
+                            if (ord) {
+                                ord.status = 'rejected';
+                                ord.rejectedAt = new Date().toISOString();
+                                ord.rejectedBy = currentUser ? currentUser.name : 'Kasir';
+                                saveLocalOnlineOrders();
+                                renderOnlineOrdersTable();
+                            }
+                        }
+                        showToast('Pesanan berhasil ditolak & stok dikembalikan.', 'info');
+                        closePaymentProofModal();
+                    } catch (err) {
+                        showToast('Gagal menolak pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        function reprintOnlineOrderReceipt(orderId) {
+            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+            if (ord) {
+                cetakStrukOnlineOtomatis(orderId, ord, true);
+            }
+        }
+
+        // ==========================================
+        // MODAL BUKTI TRANSFER POP-UP
+        // ==========================================
+        function viewPaymentProof(orderId) {
+            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+            if (!ord) return;
+            openPaymentProofModal(ord);
+        }
+
+        function openPaymentProofModal(order) {
+            currentViewingProofOrder = order;
+
+            const orderNum = order.orderNumber || ('ORD-' + (order.firestoreId || order.id).slice(-6).toUpperCase());
+            document.getElementById('proofModalOrderId').innerText = orderNum;
+            document.getElementById('proofModalCustomerName').innerText = order.customerName || '-';
+            document.getElementById('proofModalOrderTotal').innerText = 'Rp ' + (Number(order.total) || 0).toLocaleString('id-ID');
+            document.getElementById('proofModalBankName').innerText = order.bankName || (order.paymentMethod || 'Transfer Bank');
+
+            const imgEl = document.getElementById('paymentProofImg');
+            const fallbackEl = document.getElementById('paymentProofEmptyFallback');
+            const acceptBtn = document.getElementById('proofModalAcceptBtn');
+            const rejectBtn = document.getElementById('proofModalRejectBtn');
+
+            if (order.status === 'pending') {
+                if (acceptBtn) acceptBtn.classList.remove('hidden');
+                if (rejectBtn) rejectBtn.classList.remove('hidden');
+            } else {
+                if (acceptBtn) acceptBtn.classList.add('hidden');
+                if (rejectBtn) rejectBtn.classList.add('hidden');
+            }
+
+            const proofUrl = order.paymentProofUrl || order.proofUrl;
+            if (proofUrl && proofUrl.trim().length > 10) {
+                imgEl.src = proofUrl;
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+            }
+
+            document.getElementById('paymentProofModal').classList.remove('hidden');
+        }
+
+        function closePaymentProofModal() {
+            document.getElementById('paymentProofModal').classList.add('hidden');
+            currentViewingProofOrder = null;
+        }
+
+        function acceptCurrentProofOrder() {
+            if (!currentViewingProofOrder) return;
+            const orderId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.id;
+            acceptOnlineOrderPayment(orderId);
+        }
+
+        function rejectCurrentProofOrder() {
+            if (!currentViewingProofOrder) return;
+            const orderId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.id;
+            rejectOnlineOrder(orderId);
+        }
+
+        // ==========================================
+        // SIMULASI PESANAN ONLINE (DEMO & TESTING)
+        // ==========================================
+        function openSimulateOrderModal() {
+            const listContainer = document.getElementById('simOrderProductsList');
+            if (listContainer) {
+                if (dbProducts.length === 0) {
+                    listContainer.innerHTML = '<div class="text-slate-400 text-xs py-2">Belum ada barang di stok.</div>';
+                } else {
+                    listContainer.innerHTML = dbProducts.slice(0, 8).map((p, idx) => `
+                        <label class="flex items-center justify-between p-1.5 bg-white rounded-lg border border-slate-200 cursor-pointer hover:bg-slate-100">
+                            <div class="flex items-center space-x-2 truncate pr-2">
+                                <input type="checkbox" name="simProductCheck" value="${p.firestoreId}" ${idx < 2 ? 'checked' : ''} class="rounded text-emerald-600 focus:ring-emerald-500">
+                                <span class="font-bold text-slate-800 truncate">${escapeHtml(p.name)}</span>
+                            </div>
+                            <span class="font-bold text-emerald-600 text-xs shrink-0">Rp ${(Number(p.sellPrice) || 0).toLocaleString('id-ID')}</span>
+                        </label>
+                    `).join('');
+                }
+            }
+
+            document.getElementById('simulateOrderModal').classList.remove('hidden');
+        }
+
+        function closeSimulateOrderModal() {
+            document.getElementById('simulateOrderModal').classList.add('hidden');
+        }
+
+        async function handleSimulateOrderSubmit(e) {
+            e.preventDefault();
+            const custName = document.getElementById('simCustomerName').value.trim();
+            const custPhone = document.getElementById('simCustomerPhone').value.trim();
+            const deliveryMethod = document.getElementById('simDeliveryMethod').value;
+            const paymentMethod = document.getElementById('simPaymentMethod').value;
+            const custAddress = document.getElementById('simCustomerAddress').value.trim();
+
+            const checkedBoxes = document.querySelectorAll('input[name="simProductCheck"]:checked');
+            if (checkedBoxes.length === 0) {
+                showToast('Pilih setidaknya 1 produk yang dipesan!', 'error');
+                return;
+            }
+
+            let orderItems = [];
+            let subtotal = 0;
+
+            checkedBoxes.forEach(cb => {
+                const prod = dbProducts.find(p => p.firestoreId === cb.value);
+                if (prod) {
+                    const price = Number(prod.sellPrice) || 0;
+                    orderItems.push({
+                        productId: prod.firestoreId,
+                        firestoreId: prod.firestoreId,
+                        name: prod.name,
+                        barcode: prod.barcode,
+                        qty: 1,
+                        sellPrice: price,
+                        buyPrice: Number(prod.buyPrice) || 0
+                    });
+                    subtotal += price;
+
+                    // Potong stok barang di toko saat pesanan masuk
+                    if (prod.stock > 0) {
+                        prod.stock = Math.max(0, prod.stock - 1);
+                    }
+                }
+            });
+
+            // Status: jika Cash -> langsung verified, jika Transfer Bank -> pending (butuh verifikasi)
+            const isCash = paymentMethod === 'Cash';
+            const status = isCash ? 'verified' : 'pending';
+
+            const orderNum = 'ORD-ONL-' + Math.floor(1000 + Math.random() * 9000);
+            const newOrder = {
+                storeId: currentStoreId || 'HJN-DEMO',
+                orderNumber: orderNum,
+                customerName: custName,
+                customerPhone: custPhone,
+                customerAddress: custAddress,
+                deliveryMethod: deliveryMethod,
+                paymentMethod: paymentMethod,
+                bankName: paymentMethod === 'Transfer Bank' ? 'BCA Transfer' : 'Cash',
+                paymentProofUrl: paymentMethod === 'Transfer Bank' ? SAMPLE_BASE64_PROOF : '',
+                status: status,
+                isPrinted: false,
+                isCommittedToTransactions: false,
+                isStockRestored: false,
+                items: orderItems,
+                subtotal: subtotal,
+                discount: 0,
+                total: subtotal,
+                createdAt: new Date().toISOString()
+            };
+
+            closeSimulateOrderModal();
+
+            try {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+                    // Update stock di Firestore
+                    for (const item of orderItems) {
+                        const prod = dbProducts.find(p => p.firestoreId === item.productId);
+                        if (prod) {
+                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
+                                stock: prod.stock
+                            });
+                        }
+                    }
+                    // Add ke collection online_orders
+                    await db.collection("online_orders").add(newOrder);
+                } else {
+                    saveLocalProducts();
+                    renderStockTable();
+                    newOrder.firestoreId = 'onl_' + Date.now();
+                    newOrder.id = newOrder.firestoreId;
+                    onlineOrdersList.unshift(newOrder);
+                    saveLocalOnlineOrders();
+                    renderOnlineOrdersTable();
+
+                    // Trigger sound & notification
+                    if (status === 'pending') {
+                        playBeepSound();
+                        triggerHapticFeedback(120);
+                        showToast(`Pesanan Online Baru #${orderNum} dari ${custName} masuk!`, 'info');
+                    } else if (status === 'verified') {
+                        cetakStrukOnlineOtomatis(newOrder.firestoreId, newOrder);
+                        commitOnlineOrderToTransactions(newOrder.firestoreId, newOrder);
+                    }
+                }
+
+                showToast(`Pesanan online simulasi #${orderNum} berhasil dibuat!`, 'success');
+                switchTab('pelanggan-online');
+            } catch (err) {
+                showToast('Gagal mengirim simulasi order: ' + err.message, 'error');
+            }
+        }
+
+        window.viewPaymentProof = viewPaymentProof;
+        window.openPaymentProofModal = openPaymentProofModal;
+        window.closePaymentProofModal = closePaymentProofModal;
+        window.acceptCurrentProofOrder = acceptCurrentProofOrder;
+        window.rejectCurrentProofOrder = rejectCurrentProofOrder;
+        window.acceptOnlineOrderPayment = acceptOnlineOrderPayment;
+        window.rejectOnlineOrder = rejectOnlineOrder;
+        window.reprintOnlineOrderReceipt = reprintOnlineOrderReceipt;
+        window.openSimulateOrderModal = openSimulateOrderModal;
+        window.closeSimulateOrderModal = closeSimulateOrderModal;
+        window.handleSimulateOrderSubmit = handleSimulateOrderSubmit;
+        window.onOnlineOrderFilterChanged = onOnlineOrderFilterChanged;
+        window.onOnlineOrdersSearchChanged = onOnlineOrdersSearchChanged;
+        window.clearOnlineOrderSearch = clearOnlineOrderSearch;
+        window.refreshOnlineOrdersFromCloud = refreshOnlineOrdersFromCloud;
+        window.changeOnlineOrdersPageSize = changeOnlineOrdersPageSize;
+        window.goToOnlineOrdersPage = goToOnlineOrdersPage;
+        window.renderOnlineOrdersTable = renderOnlineOrdersTable;
 
     </script>
 </body>
