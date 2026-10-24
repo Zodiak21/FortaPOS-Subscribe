@@ -40,9 +40,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase SDK (v9 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Firebase SDK (v8 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <!-- Chart.js for Sales Analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Html5-qrcode for Barcode Scanning -->
@@ -2685,15 +2685,18 @@
     
     <!-- MODAL: Lihat Bukti Transfer Bank Pembayaran Online -->
     <div id="paymentProofModal" class="fixed inset-0 bg-slate-900/80 z-[160] flex items-center justify-center hidden p-3 sm:p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] flex flex-col border border-slate-200">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-3.5 max-h-[94vh] flex flex-col border border-slate-200">
             <div class="flex justify-between items-center border-b border-slate-200 pb-3">
                 <div class="flex items-center space-x-2.5">
                     <div class="w-10 h-10 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg shadow-xs">
                         <i class="fa-solid fa-receipt"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-base text-slate-800">Bukti Transfer Pembayaran</h3>
-                        <p class="text-[11px] text-slate-500 font-medium">Validasi keabsahan bukti transfer pelanggan sebelum menerima pesanan</p>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-base text-slate-800">Verifikasi Bukti Transfer & Pesanan</h3>
+                            <span id="proofModalStatusBadge" class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300">Pending</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 font-medium">Validasi bukti transfer dan kelola status pesanan online secara real-time</p>
                     </div>
                 </div>
                 <button type="button" onclick="closePaymentProofModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-full transition cursor-pointer">
@@ -2701,32 +2704,76 @@
                 </button>
             </div>
 
-            <!-- Detail Pesanan Singkat -->
-            <div class="p-3 bg-slate-50 rounded-2xl border border-slate-200 space-y-1.5 text-xs">
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-500">ID Pesanan:</span>
-                    <strong id="proofModalOrderId" class="font-mono text-slate-800 font-bold">-</strong>
+            <!-- Detail Pesanan Lengkap -->
+            <div class="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-slate-400 text-[10px] block font-medium">ID Pesanan (orderId):</span>
+                        <strong id="proofModalOrderId" class="font-mono text-slate-800 font-bold text-xs">-</strong>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] block font-medium">Nama Pelanggan:</span>
+                        <span id="proofModalCustomerName" class="font-bold text-slate-800 text-xs">-</span>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-500">Pelanggan:</span>
-                    <span id="proofModalCustomerName" class="font-semibold text-slate-800">-</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <span class="text-slate-400 text-[10px] block font-medium">Nomor WhatsApp:</span>
+                        <div class="flex items-center space-x-1.5 mt-0.5">
+                            <span id="proofModalCustomerPhone" class="font-mono font-semibold text-slate-700">-</span>
+                            <a id="proofModalWaLink" href="#" target="_blank" class="text-emerald-600 hover:text-emerald-700 text-xs font-semibold inline-flex items-center gap-0.5" title="Chat WhatsApp Pelanggan">
+                                <i class="fa-brands fa-whatsapp text-sm text-emerald-500"></i>
+                                <span>Hubungi</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-slate-400 text-[10px] block font-medium">Metode & Pengiriman:</span>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span id="proofModalDeliveryMethod" class="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">antar</span>
+                            <span id="proofModalPaymentMethod" class="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded">transfer</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-500">Total Belanja:</span>
-                    <strong id="proofModalOrderTotal" class="text-emerald-700 text-sm font-extrabold">Rp 0</strong>
+                <div id="proofModalAddressBox">
+                    <span class="text-slate-400 text-[10px] block font-medium">Alamat Lengkap (deliveryAddress):</span>
+                    <span id="proofModalDeliveryAddress" class="text-slate-700 font-medium text-xs block">-</span>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-slate-500">Metode / Bank:</span>
-                    <span id="proofModalBankName" class="font-medium text-slate-700">-</span>
+                <div id="proofModalNotesBox">
+                    <span class="text-slate-400 text-[10px] block font-medium">Catatan Pelanggan (notes):</span>
+                    <span id="proofModalNotes" class="text-slate-700 italic text-xs block">-</span>
+                </div>
+            </div>
+
+            <!-- Rincian Produk Dipesan (items: id, nama, qty, hargaJual) -->
+            <div class="space-y-1 text-xs">
+                <span class="font-bold text-slate-700 uppercase tracking-wider text-[10px] flex items-center justify-between">
+                    <span>Produk Dipesan (items):</span>
+                    <span id="proofModalItemsCount" class="text-slate-500 font-normal">0 barang</span>
+                </span>
+                <div id="proofModalItemsList" class="p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-24 overflow-y-auto space-y-1 divide-y divide-slate-100">
+                    <!-- Populated dynamically -->
+                </div>
+                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="text-slate-600">Subtotal: <strong id="proofModalSubtotal" class="font-bold">Rp 0</strong></span>
+                        <span class="text-slate-400 mx-1">•</span>
+                        <span class="text-slate-600">Ongkir: <strong id="proofModalOngkir" class="font-bold">Rp 0</strong></span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] text-slate-500 block">Total Tagihan (grandTotal):</span>
+                        <strong id="proofModalOrderTotal" class="text-emerald-700 text-sm font-extrabold">Rp 0</strong>
+                    </div>
                 </div>
             </div>
 
             <!-- Gambar Resolusi Penuh Base64 -->
-            <div class="flex-grow overflow-y-auto p-2 bg-slate-900 rounded-2xl flex items-center justify-center min-h-[220px] max-h-[50vh] border border-slate-800 shadow-inner">
-                <img id="paymentProofImg" src="" alt="Bukti Transfer Pembayaran" class="max-h-[46vh] max-w-full object-contain rounded-lg shadow-md transition hover:scale-105 duration-200">
+            <div class="flex-grow overflow-y-auto p-2 bg-slate-900 rounded-2xl flex flex-col items-center justify-center min-h-[190px] max-h-[32vh] border border-slate-800 shadow-inner relative">
+                <span class="absolute top-2 left-3 text-[10px] font-mono text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">paymentProofUrl (Base64)</span>
+                <img id="paymentProofImg" src="" alt="Bukti Transfer Pembayaran" class="max-h-[28vh] max-w-full object-contain rounded-lg shadow-md transition hover:scale-105 duration-200 cursor-zoom-in">
                 <div id="paymentProofEmptyFallback" class="hidden text-center text-slate-400 text-xs py-8 space-y-1">
                     <i class="fa-solid fa-image-slash text-3xl mb-1 text-slate-500 block"></i>
-                    <p>Gambar bukti transfer tidak tersedia atau format tidak didukung.</p>
+                    <p>Gambar bukti transfer tidak tersedia atau pembayaran dilakukan secara Tunai (Cash).</p>
                 </div>
             </div>
 
@@ -2735,13 +2782,13 @@
                 <button type="button" onclick="closePaymentProofModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer">
                     Tutup
                 </button>
-                <button type="button" id="proofModalRejectBtn" onclick="rejectCurrentProofOrder()" class="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer">
+                <button type="button" id="proofModalRejectBtn" onclick="rejectCurrentProofOrder()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer">
                     <i class="fa-solid fa-ban"></i>
-                    <span>Tolak & Batalkan</span>
+                    <span>Tolak / Batalkan</span>
                 </button>
                 <button type="button" id="proofModalAcceptBtn" onclick="acceptCurrentProofOrder()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-md cursor-pointer">
                     <i class="fa-solid fa-check-double"></i>
-                    <span>Terima Pembayaran</span>
+                    <span>Terima & Verifikasi</span>
                 </button>
             </div>
         </div>
@@ -2829,13 +2876,13 @@
         // Berjalan di latar belakang menggunakan config internal
         // ==========================================
         let firebaseConfig = {
-            apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
-            authDomain: "fortaappsubscribe.firebaseapp.com",
-            projectId: "fortaappsubscribe",
-            storageBucket: "fortaappsubscribe.firebasestorage.app",
-            messagingSenderId: "935859426439",
-            appId: "1:935859426439:web:e5c43eed974f1606e61422"
-        };
+  apiKey: "AIzaSyBMhtkRLId3n3E7C7ZxYZ_3WsFtoJekraE",
+  authDomain: "fortaappsubscribe.firebaseapp.com",
+  projectId: "fortaappsubscribe",
+  storageBucket: "fortaappsubscribe.firebasestorage.app",
+  messagingSenderId: "935859426439",
+  appId: "1:935859426439:web:e5c43eed974f1606e61422"
+};
 
         try {
             const savedCustomFb = localStorage.getItem('fortapos_custom_firebase_config');
@@ -9575,6 +9622,8 @@
     
         // ==============================================================
         // MANAJEMEN PESANAN PELANGGAN ONLINE (FIRESTORE v8 COMPAT SDK)
+        // Path Database: /stores/{storeId}/online_orders
+        // Sinkronisasi Sempurna dengan Halaman Pelanggan Online
         // ==============================================================
         let unsubOnlineOrders = null;
         let onlineOrdersList = [];
@@ -9585,7 +9634,7 @@
         let onlineOrdersSearchKeyword = '';
         let isInitialOnlineOrdersLoad = true;
 
-        // Sample Base64 image placeholder for transfer receipt
+        // Sample Base64 image placeholder for transfer receipt testing
         const SAMPLE_BASE64_PROOF = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='600' viewBox='0 0 400 600'><rect width='400' height='600' fill='%23f8fafc'/><rect x='20' y='20' width='360' height='560' rx='16' fill='%23ffffff' stroke='%23cbd5e1' stroke-width='2'/><circle cx='200' cy='80' r='30' fill='%2310b981'/><path d='M190 80l7 7 15-15' stroke='%23ffffff' stroke-width='4' fill='none' stroke-linecap='round'/><text x='200' y='140' font-family='sans-serif' font-size='18' font-weight='bold' text-anchor='middle' fill='%230f172a'>TRANSFER BERHASIL</text><text x='200' y='165' font-family='sans-serif' font-size='12' text-anchor='middle' fill='%2364748b'>BANK CENTRAL ASIA (BCA)</text><line x1='40' y1='185' x2='360' y2='185' stroke='%23e2e8f0' stroke-dasharray='4'/><text x='40' y='220' font-family='sans-serif' font-size='12' fill='%2364748b'>Tanggal / Waktu</text><text x='360' y='220' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%230f172a'>Hari Ini</text><text x='40' y='255' font-family='sans-serif' font-size='12' fill='%2364748b'>Penerima</text><text x='360' y='255' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%230f172a'>Rekening Toko POS</text><text x='40' y='290' font-family='sans-serif' font-size='12' fill='%2364748b'>Status</text><text x='360' y='290' font-family='sans-serif' font-size='12' font-weight='bold' text-anchor='end' fill='%2310b981'>BERHASIL / LUNAS</text><line x1='40' y1='320' x2='360' y2='320' stroke='%23e2e8f0' stroke-dasharray='4'/><rect x='40' y='340' width='320' height='70' rx='12' fill='%23ecfdf5' stroke='%236ee7b7'/><text x='60' y='370' font-family='sans-serif' font-size='11' fill='%23065f46'>TOTAL TRANSFER</text><text x='60' y='395' font-family='sans-serif' font-size='20' font-weight='bold' fill='%23047857'>VALID PAYMENT</text><text x='200' y='460' font-family='sans-serif' font-size='11' text-anchor='middle' fill='%2394a3b8'>No. Referensi: 20261023998811</text><text x='200' y='520' font-family='sans-serif' font-size='10' text-anchor='middle' fill='%23cbd5e1'>BUKTI TRANSFER ELEKTRONIK RESMI</text></svg>";
 
         function playBeepSound() {
@@ -9593,7 +9642,89 @@
         }
         window.playBeepSound = playBeepSound;
 
-        // Inisialisasi Real-time Listener Koleksi online_orders Firestore SDK v8
+        // Normalisasi skema objek pesanan pelanggan online agar selalu sinkron sempurna
+        function getNormalizedOrder(order) {
+            const rawId = order.orderId || order.orderNumber || order.id || (order.firestoreId ? 'ORD-' + order.firestoreId.slice(-6).toUpperCase() : 'ORD-' + Math.floor(100000 + Math.random() * 900000));
+            const customerName = order.customerName || order.namaPelanggan || order.customer || 'Pelanggan';
+            const customerPhone = order.customerPhone || order.customerWhatsapp || order.phone || order.whatsapp || '';
+            const customerWhatsapp = order.customerWhatsapp || order.customerPhone || order.whatsapp || '';
+
+            // deliveryMethod: "antar" atau "ambil"
+            let deliveryMethod = (order.deliveryMethod || order.metodePengiriman || 'antar').toLowerCase();
+            if (deliveryMethod.includes('antar') || deliveryMethod.includes('delivery')) {
+                deliveryMethod = 'antar';
+            } else {
+                deliveryMethod = 'ambil';
+            }
+
+            const deliveryAddress = order.deliveryAddress || order.customerAddress || order.alamat || '-';
+
+            // paymentMethod: "transfer" atau "cash"
+            let paymentMethod = (order.paymentMethod || order.metodePembayaran || 'transfer').toLowerCase();
+            if (paymentMethod.includes('transfer') || paymentMethod.includes('bank')) {
+                paymentMethod = 'transfer';
+            } else {
+                paymentMethod = 'cash';
+            }
+
+            // items: Array of { id, nama, qty, hargaJual }
+            const items = (order.items || []).map(i => {
+                const id = i.id || i.productId || i.firestoreId || '';
+                const nama = i.nama || i.name || 'Produk';
+                const qty = Number(i.qty) || 1;
+                const hargaJual = Number(i.hargaJual !== undefined ? i.hargaJual : (i.sellPrice !== undefined ? i.sellPrice : i.price)) || 0;
+                return {
+                    id,
+                    productId: id,
+                    nama,
+                    name: nama,
+                    qty,
+                    hargaJual,
+                    sellPrice: hargaJual,
+                    buyPrice: Number(i.buyPrice) || 0,
+                    total: qty * hargaJual
+                };
+            });
+
+            const subtotal = Number(order.subtotal !== undefined ? order.subtotal : items.reduce((acc, it) => acc + it.total, 0)) || 0;
+            const ongkir = Number(order.ongkir !== undefined ? order.ongkir : 0) || 0;
+            const grandTotal = Number(order.grandTotal !== undefined ? order.grandTotal : (order.total !== undefined ? order.total : (subtotal + ongkir))) || (subtotal + ongkir);
+            const notes = order.notes || order.catatan || '';
+
+            // status: "Pending", "Verified", "cancelled", "expired"
+            let status = order.status || 'Pending';
+            const sLower = status.toLowerCase();
+            if (sLower === 'pending') status = 'Pending';
+            else if (sLower === 'verified') status = 'Verified';
+            else if (sLower === 'cancelled' || sLower === 'rejected') status = 'cancelled';
+            else if (sLower === 'expired') status = 'expired';
+
+            const paymentProofUrl = order.paymentProofUrl || order.proofUrl || '';
+
+            return {
+                ...order,
+                orderId: rawId,
+                customerName,
+                customerPhone,
+                customerWhatsapp,
+                deliveryMethod,
+                deliveryAddress,
+                paymentMethod,
+                items,
+                subtotal,
+                ongkir,
+                grandTotal,
+                notes,
+                status,
+                paymentProofUrl,
+                stockDeducted: order.stockDeducted === true || order.isStockDeducted === true,
+                isStockRestored: order.isStockRestored === true
+            };
+        }
+
+        // ==============================================================
+        // 2. LISTENER REAL-TIME FIRESTORE: /stores/{storeId}/online_orders
+        // ==============================================================
         function initOnlineOrdersListener() {
             if (unsubOnlineOrders) {
                 try { unsubOnlineOrders(); } catch (e) {}
@@ -9602,39 +9733,41 @@
 
             isInitialOnlineOrdersLoad = true;
 
-            if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
+            if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
                 try {
-                    // Filter dokumen order berdasarkan storeId yang aktif
-                    const ordersQuery = db.collection("online_orders").where("storeId", "==", currentStoreId);
-                    unsubOnlineOrders = ordersQuery.onSnapshot(
+                    // Sesuai Spesifikasi: Path Firestore tepat pada /stores/{storeId}/online_orders
+                    const ordersRef = db.collection("stores").doc(currentStoreId).collection("online_orders");
+
+                    unsubOnlineOrders = ordersRef.onSnapshot(
                         snapshot => {
                             let pendingCount = 0;
 
                             snapshot.docChanges().forEach(change => {
                                 const docData = change.doc.data();
                                 const docId = change.doc.id;
+                                const normalized = getNormalizedOrder({ firestoreId: docId, id: docId, ...docData });
 
-                                // 3a. Jika terdeteksi pesanan masuk dengan status "pending", bunyikan audio feedback beep & naikkan badge
-                                if (change.type === 'added' && docData.status === 'pending' && !isInitialOnlineOrdersLoad) {
+                                // Notifikasi suara & alert jika ada pesanan baru masuk berstatus "Pending"
+                                if (change.type === 'added' && normalized.status === 'Pending' && !isInitialOnlineOrdersLoad) {
                                     playBeepSound();
                                     triggerHapticFeedback(120);
-                                    showToast(`Pesanan Online Baru #${docData.orderNumber || docId.slice(-6)} dari ${docData.customerName || 'Pelanggan'}!`, 'info');
+                                    showToast(`Pesanan Online Baru #${normalized.orderId} dari ${normalized.customerName}!`, 'info');
                                 }
 
-                                // 3b. Jika pesanan masuk memiliki status "verified" (karena pelanggan pilih Cash/Ambil Sendiri atau diverifikasi):
-                                if ((change.type === 'added' || change.type === 'modified') && docData.status === 'verified') {
+                                // Auto-Print jika status "Verified" dan belum dicetak
+                                if ((change.type === 'added' || change.type === 'modified') && normalized.status === 'Verified') {
                                     if (!docData.isPrinted) {
-                                        cetakStrukOnlineOtomatis(docId, docData);
+                                        cetakStrukOnlineOtomatis(docId, normalized);
                                     }
                                     if (!docData.isCommittedToTransactions) {
-                                        commitOnlineOrderToTransactions(docId, docData);
+                                        commitOnlineOrderToTransactions(docId, normalized);
                                     }
                                 }
 
-                                // 4. LOGIKA PENGEMBALIAN STOK OTOMATIS (EXPIRED ORDER WATCHER)
-                                if ((change.type === 'added' || change.type === 'modified') && docData.status === 'expired') {
-                                    if (!docData.isStockRestored) {
-                                        rollbackExpiredOnlineOrderStock(docId, docData);
+                                // Auto-Rollback stok jika pesanan berstatus "expired" atau "cancelled"
+                                if ((change.type === 'added' || change.type === 'modified') && (normalized.status === 'expired' || normalized.status === 'cancelled')) {
+                                    if (normalized.stockDeducted && !docData.isStockRestored) {
+                                        rollbackExpiredOnlineOrderStock(docId, normalized);
                                     }
                                 }
                             });
@@ -9644,12 +9777,15 @@
                             let orders = [];
                             snapshot.forEach(doc => {
                                 const d = doc.data();
-                                orders.push({ firestoreId: doc.id, id: doc.id, ...d });
-                                if (d.status === 'pending') {
+                                const docId = doc.id;
+                                const norm = getNormalizedOrder({ firestoreId: docId, docId: docId, id: docId, ...d });
+                                orders.push(norm);
+                                if (norm.status === 'Pending') {
                                     pendingCount++;
                                 }
                             });
 
+                            // Urutkan dari pesanan terbaru
                             orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
                             onlineOrdersList = orders;
 
@@ -9658,7 +9794,7 @@
                             updateOnlineOrdersCounters();
                         },
                         err => {
-                            console.warn("Firestore online_orders onSnapshot peringatan:", err);
+                            console.warn("Firestore /stores/{storeId}/online_orders onSnapshot peringatan:", err);
                             loadLocalOnlineOrders();
                         }
                     );
@@ -9681,16 +9817,15 @@
                 saved = [];
             }
 
-            // Jika belum ada data lokal, buat beberapa pesanan demo online
             if (!saved || saved.length === 0) {
                 saved = getInitialDemoOnlineOrders();
                 localStorage.setItem('fortapos_online_orders', JSON.stringify(saved));
             }
 
-            onlineOrdersList = saved;
+            onlineOrdersList = saved.map(o => getNormalizedOrder(o));
             let pendingCount = 0;
             onlineOrdersList.forEach(o => {
-                if (o.status === 'pending') pendingCount++;
+                if (o.status === 'Pending') pendingCount++;
             });
             updateOnlineOrdersBadge(pendingCount);
             renderOnlineOrdersTable();
@@ -9701,7 +9836,7 @@
             localStorage.setItem('fortapos_online_orders', JSON.stringify(onlineOrdersList));
             let pendingCount = 0;
             onlineOrdersList.forEach(o => {
-                if (o.status === 'pending') pendingCount++;
+                if (o.status === 'Pending') pendingCount++;
             });
             updateOnlineOrdersBadge(pendingCount);
             updateOnlineOrdersCounters();
@@ -9713,76 +9848,82 @@
                 {
                     firestoreId: 'onl_demo_101',
                     id: 'onl_demo_101',
-                    orderNumber: 'ORD-ONL-101',
-                    storeId: currentStoreId || 'HJN-DEMO',
+                    orderId: 'ORD-ONL-2026101',
                     customerName: 'Ahmad Fauzi',
                     customerPhone: '081298765432',
-                    customerAddress: 'Jl. Melati Blok C2 No. 14, Jakarta',
-                    deliveryMethod: 'Diantar',
-                    paymentMethod: 'Transfer Bank',
+                    customerWhatsapp: '081298765432',
+                    deliveryMethod: 'antar',
+                    deliveryAddress: 'Jl. Melati Blok C2 No. 14, Jakarta',
+                    paymentMethod: 'transfer',
                     bankName: 'BCA (Virtual Account)',
                     paymentProofUrl: SAMPLE_BASE64_PROOF,
-                    status: 'pending',
+                    status: 'Pending',
+                    stockDeducted: false,
                     isPrinted: false,
                     isCommittedToTransactions: false,
                     isStockRestored: false,
                     createdAt: new Date(now - 1200000).toISOString(),
                     items: [
-                        { name: 'Minyak Goreng Bimoli 1L', qty: 2, sellPrice: 18500, buyPrice: 15000 },
-                        { name: 'Beras Pandan Wangi 5kg', qty: 1, sellPrice: 78000, buyPrice: 65000 }
+                        { id: 'prod_1', nama: 'Minyak Goreng Bimoli 1L', qty: 2, hargaJual: 18500, buyPrice: 15000 },
+                        { id: 'prod_5', nama: 'Beras Pandan Wangi 5kg', qty: 1, hargaJual: 78000, buyPrice: 65000 }
                     ],
                     subtotal: 115000,
-                    discount: 0,
-                    total: 115000
+                    ongkir: 10000,
+                    grandTotal: 125000,
+                    notes: 'Tolong diantar sebelum jam 5 sore'
                 },
                 {
                     firestoreId: 'onl_demo_102',
                     id: 'onl_demo_102',
-                    orderNumber: 'ORD-ONL-102',
-                    storeId: currentStoreId || 'HJN-DEMO',
+                    orderId: 'ORD-ONL-2026102',
                     customerName: 'Dewi Lestari',
                     customerPhone: '085711223344',
-                    customerAddress: 'Ambil di Toko',
-                    deliveryMethod: 'Ambil Sendiri',
-                    paymentMethod: 'Cash',
+                    customerWhatsapp: '085711223344',
+                    deliveryMethod: 'ambil',
+                    deliveryAddress: 'Ambil di Toko',
+                    paymentMethod: 'cash',
                     bankName: 'Tunai di Kasir',
                     paymentProofUrl: '',
-                    status: 'verified',
+                    status: 'Verified',
+                    stockDeducted: true,
                     isPrinted: true,
                     isCommittedToTransactions: true,
                     isStockRestored: false,
                     createdAt: new Date(now - 3600000).toISOString(),
                     items: [
-                        { name: 'Indomie Goreng Spesial', qty: 5, sellPrice: 3200, buyPrice: 2500 },
-                        { name: 'Gula Pasir Gulaku 1kg', qty: 2, sellPrice: 16500, buyPrice: 13500 }
+                        { id: 'prod_2', nama: 'Indomie Goreng Spesial', qty: 5, hargaJual: 3200, buyPrice: 2500 },
+                        { id: 'prod_3', nama: 'Gula Pasir Gulaku 1kg', qty: 2, hargaJual: 16500, buyPrice: 13500 }
                     ],
                     subtotal: 49000,
-                    discount: 0,
-                    total: 49000
+                    ongkir: 0,
+                    grandTotal: 49000,
+                    notes: 'Ambil sendiri waktu istirahat kantor'
                 },
                 {
                     firestoreId: 'onl_demo_103',
                     id: 'onl_demo_103',
-                    orderNumber: 'ORD-ONL-103',
-                    storeId: currentStoreId || 'HJN-DEMO',
+                    orderId: 'ORD-ONL-2026103',
                     customerName: 'Rudi Hartono',
                     customerPhone: '087899001122',
-                    customerAddress: 'Jl. Anggrek No. 5',
-                    deliveryMethod: 'Diantar',
-                    paymentMethod: 'Transfer Bank',
+                    customerWhatsapp: '087899001122',
+                    deliveryMethod: 'antar',
+                    deliveryAddress: 'Jl. Anggrek No. 5',
+                    paymentMethod: 'transfer',
                     bankName: 'Mandiri',
                     paymentProofUrl: '',
                     status: 'expired',
+                    stockDeducted: false,
                     isPrinted: false,
                     isCommittedToTransactions: false,
                     isStockRestored: true,
                     createdAt: new Date(now - 86400000).toISOString(),
                     items: [
-                        { name: 'Kopi Kapal Api Spesial Mix', qty: 3, sellPrice: 2000, buyPrice: 1200 }
+                        { id: 'prod_4', nama: 'Kopi Kapal Api Spesial Mix', qty: 3, hargaJual: 2000, buyPrice: 1200 }
                     ],
                     subtotal: 6000,
-                    discount: 0,
-                    total: 6000
+                    ongkir: 10000,
+                    grandTotal: 16000,
+                    notes: ''
                 }
             ];
         }
@@ -9807,11 +9948,12 @@
             let completedCount = 0;
             let totalRev = 0;
 
-            onlineOrdersList.forEach(o => {
-                if (o.status === 'pending') pendingCount++;
-                if (o.status === 'verified' || o.status === 'completed') {
+            onlineOrdersList.forEach(raw => {
+                const o = getNormalizedOrder(raw);
+                if (o.status === 'Pending') pendingCount++;
+                if (o.status === 'Verified') {
                     completedCount++;
-                    totalRev += (Number(o.total) || 0);
+                    totalRev += (Number(o.grandTotal) || 0);
                 }
             });
 
@@ -9871,29 +10013,540 @@
             renderOnlineOrdersTable();
         }
 
-        // Render Tabel Transaksi Online Real-time
+        // ==============================================================
+        // 4. POTONG STOK & KEMBALIKAN STOK PRODUK (/stores/{storeId}/products)
+        // ==============================================================
+        async function deductStockForOnlineOrder(order) {
+            const items = order.items || [];
+            let updatedProducts = false;
+
+            for (const item of items) {
+                const pId = item.id || item.productId || item.firestoreId;
+                const qty = Number(item.qty) || 1;
+
+                // Cari produk di katalog stok
+                const prod = dbProducts.find(p => 
+                    (pId && p.firestoreId === pId) || 
+                    (p.barcode && item.barcode && p.barcode === item.barcode) ||
+                    (p.name && item.nama && p.name.toLowerCase() === item.nama.toLowerCase()) ||
+                    (p.name && item.name && p.name.toLowerCase() === item.name.toLowerCase())
+                );
+
+                if (prod) {
+                    const currentStock = Number(prod.stock) || 0;
+                    const newStock = Math.max(0, currentStock - qty);
+                    prod.stock = newStock;
+                    updatedProducts = true;
+
+                    // Simpan langsung secara real-time ke path /stores/{storeId}/products/{productId}
+                    if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                        try {
+                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
+                                stock: newStock,
+                                updatedAt: new Date().toISOString()
+                            });
+                        } catch (e) {
+                            console.warn(`Gagal memotong stok ${prod.name} di Firestore:`, e);
+                        }
+                    }
+                }
+            }
+
+            if (updatedProducts) {
+                saveLocalProducts();
+                renderStockTable();
+                updateStockAlertBadges();
+            }
+        }
+
+        async function restoreStockForOnlineOrder(order) {
+            const items = order.items || [];
+            let updatedProducts = false;
+
+            for (const item of items) {
+                const pId = item.id || item.productId || item.firestoreId;
+                const qty = Number(item.qty) || 1;
+
+                const prod = dbProducts.find(p => 
+                    (pId && p.firestoreId === pId) || 
+                    (p.barcode && item.barcode && p.barcode === item.barcode) ||
+                    (p.name && item.nama && p.name.toLowerCase() === item.nama.toLowerCase()) ||
+                    (p.name && item.name && p.name.toLowerCase() === item.name.toLowerCase())
+                );
+
+                if (prod) {
+                    const currentStock = Number(prod.stock) || 0;
+                    const newStock = currentStock + qty;
+                    prod.stock = newStock;
+                    updatedProducts = true;
+
+                    // Update langsung secara real-time ke path /stores/{storeId}/products/{productId}
+                    if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                        try {
+                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
+                                stock: newStock,
+                                updatedAt: new Date().toISOString()
+                            });
+                        } catch (e) {
+                            console.warn(`Gagal mengembalikan stok ${prod.name} di Firestore:`, e);
+                        }
+                    }
+                }
+            }
+
+            if (updatedProducts) {
+                saveLocalProducts();
+                renderStockTable();
+                updateStockAlertBadges();
+            }
+        }
+
+        // Watcher Pesanan Expired: Otomatis kembalikan stok jika pesanan kedaluwarsa
+        async function rollbackExpiredOnlineOrderStock(orderId, orderData) {
+            const order = getNormalizedOrder(orderData);
+            console.log(`[Expired Watcher] Mengembalikan stok pesanan expired #${order.orderId}...`);
+            try {
+                if (order.stockDeducted && !order.isStockRestored) {
+                    await restoreStockForOnlineOrder(order);
+                }
+
+                const updatePayload = {
+                    isStockRestored: true,
+                    stockDeducted: false,
+                    stockRestoredAt: new Date().toISOString()
+                };
+
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                    await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderId).update(updatePayload);
+                } else {
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        Object.assign(localOrd, updatePayload);
+                        saveLocalOnlineOrders();
+                    }
+                }
+
+                showToast(`Pesanan #${order.orderId} expired. Stok barang otomatis dikembalikan ke etalase!`, 'info');
+                logActivity('Rollback Stok Expired', `Mengembalikan stok produk untuk pesanan online #${order.orderId} yang kedaluwarsa.`);
+            } catch (err) {
+                console.error("Gagal rollback stok pesanan online expired:", err);
+            }
+        }
+
+        // ==============================================================
+        // 5. FITUR AUTO-PRINT DAN COMMITTING TRANSAKSI UTAMA KASIR
+        // ==============================================================
+        async function cetakStrukOnlineOtomatis(orderId, orderData, isManualReprint = false) {
+            if (orderData.isPrinted && !isManualReprint) {
+                return;
+            }
+
+            const order = getNormalizedOrder(orderData);
+            console.log(`[Auto-Print] Memproses cetak struk pesanan online #${order.orderId}...`);
+
+            const orderTrx = {
+                id: order.orderId,
+                date: order.createdAt || new Date().toISOString(),
+                items: order.items.map(i => ({
+                    name: i.nama,
+                    qty: i.qty,
+                    sellPrice: i.hargaJual,
+                    buyPrice: i.buyPrice
+                })),
+                subtotal: order.subtotal,
+                discount: 0,
+                total: order.grandTotal,
+                cash: order.grandTotal,
+                change: 0,
+                customer: `${order.customerName} (${order.deliveryMethod === 'antar' ? 'Antar' : 'Ambil'})`,
+                cashier: 'Kasir Online'
+            };
+
+            const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
+            const hasWebPrinter = bluetoothCharacteristic || usbDevice;
+
+            let printSuccess = false;
+
+            if (isNativeConnected || hasWebPrinter) {
+                try {
+                    const buffer = generateEscPosBuffer(orderTrx);
+                    await sendRawToPrinter(buffer);
+                    printSuccess = true;
+                    showToast(`Struk Pesanan Online #${order.orderId} BERHASIL DICETAK OTOMATIS!`, 'success');
+                    logActivity('Cetak Otomatis Online', `Struk pesanan online #${order.orderId} dicetak ke printer thermal.`);
+                } catch (e) {
+                    console.warn("Gagal cetak otomatis thermal:", e);
+                    showToast(`Cetak thermal order #${order.orderId} tertunda: ${e.message}`, 'warning');
+                }
+            } else {
+                if (isManualReprint) {
+                    pendingTransactionForPrint = orderTrx;
+                    showReceiptPreviewModal(orderTrx);
+                } else {
+                    showToast(`Pesanan #${order.orderId} diverifikasi. Hubungkan printer thermal untuk cetak otomatis.`, 'info');
+                }
+            }
+
+            // Kunci isPrinted agar printer tidak mencetak berulang
+            try {
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                    await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderId).update({
+                        isPrinted: true,
+                        printedAt: new Date().toISOString()
+                    });
+                } else {
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        localOrd.isPrinted = true;
+                        saveLocalOnlineOrders();
+                        renderOnlineOrdersTable();
+                    }
+                }
+            } catch (err) {
+                console.warn("Gagal mengunci isPrinted:", err);
+            }
+        }
+
+        // Salin pesanan online ke riwayat transaksi utama kasir
+        async function commitOnlineOrderToTransactions(orderId, orderData) {
+            if (orderData.isCommittedToTransactions) {
+                return;
+            }
+
+            const order = getNormalizedOrder(orderData);
+            console.log(`[Committing Transaksi] Mencatat pesanan #${order.orderId} ke koleksi transaksi kasir...`);
+
+            try {
+                const transactionId = order.orderId;
+                const newTrx = {
+                    storeId: currentStoreId,
+                    id: transactionId,
+                    onlineOrderId: orderId,
+                    date: order.createdAt || new Date().toISOString(),
+                    items: order.items.map(it => ({
+                        id: it.id,
+                        name: it.nama,
+                        nama: it.nama,
+                        qty: it.qty,
+                        sellPrice: it.hargaJual,
+                        hargaJual: it.hargaJual,
+                        buyPrice: it.buyPrice || 0
+                    })),
+                    subtotal: order.subtotal,
+                    ongkir: order.ongkir,
+                    discount: 0,
+                    total: order.grandTotal,
+                    cash: order.grandTotal,
+                    change: 0,
+                    notes: order.notes,
+                    paymentMethod: order.paymentMethod,
+                    deliveryMethod: order.deliveryMethod,
+                    deliveryAddress: order.deliveryAddress,
+                    customer: `${order.customerName} (Online - ${order.deliveryMethod})`,
+                    customerPhone: order.customerPhone || order.customerWhatsapp,
+                    cashier: 'Pesanan Online',
+                    cashier_uid: 'online_order_sync',
+                    isOnlineOrder: true
+                };
+
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                    const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
+                    newTrx.firestoreId = docRef.id;
+
+                    await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderId).update({
+                        isCommittedToTransactions: true,
+                        committedAt: new Date().toISOString(),
+                        transactionDocId: docRef.id
+                    });
+                } else {
+                    newTrx.firestoreId = 'trx_onl_' + Date.now();
+                    dbTransactions.unshift(newTrx);
+                    saveLocalTransactions();
+                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
+                    if (localOrd) {
+                        localOrd.isCommittedToTransactions = true;
+                        saveLocalOnlineOrders();
+                    }
+                    renderHistory();
+                    updateChart();
+                }
+
+                logActivity('Transaksi Online Dibukukan', `Pesanan online #${transactionId} (${order.customerName}) senilai Rp ${order.grandTotal.toLocaleString('id-ID')} berhasil dicatat ke omset kasir.`);
+                updateOnlineOrdersCounters();
+            } catch (err) {
+                console.error("Gagal committing transaksi online ke riwayat kasir:", err);
+            }
+        }
+
+        // ==============================================================
+        // 4. FITUR VERIFIKASI KASIR: TERIMA & TOLAK PESANAN ONLINE
+        // ==============================================================
+        // Aksi Kasir: Terima & Verifikasi Pesanan
+        async function acceptOnlineOrderPayment(orderDocId) {
+            const rawOrder = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId || o.orderId === orderDocId);
+            if (!rawOrder) return;
+            const order = getNormalizedOrder(rawOrder);
+
+            showCustomConfirm(
+                'Terima & Verifikasi Pesanan',
+                `Konfirmasi verifikasi pembayaran untuk pesanan #${order.orderId} senilai Rp ${order.grandTotal.toLocaleString('id-ID')}? Status diubah menjadi "Verified", stok produk langsung dipotong di /stores/{storeId}/products, dan struk dicetak.`,
+                async () => {
+                    try {
+                        // 1. Potong stok produk di /stores/{storeId}/products/{productId} jika belum dipotong di sisi pelanggan
+                        if (!order.stockDeducted) {
+                            await deductStockForOnlineOrder(order);
+                        }
+
+                        const updatePayload = {
+                            status: "Verified",
+                            stockDeducted: true,
+                            isStockDeducted: true,
+                            verifiedAt: new Date().toISOString(),
+                            verifiedBy: currentUser ? currentUser.name : 'Kasir'
+                        };
+
+                        // 2. Update status di Firestore path /stores/{storeId}/online_orders/{orderDocId}
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                            await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderDocId).update(updatePayload);
+                        } else {
+                            const localOrd = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId);
+                            if (localOrd) {
+                                Object.assign(localOrd, updatePayload);
+                                saveLocalOnlineOrders();
+                            }
+                        }
+
+                        // 3. Catat transaksi ke riwayat kasir
+                        await commitOnlineOrderToTransactions(orderDocId, { ...order, ...updatePayload });
+
+                        // 4. Cetak struk otomatis
+                        cetakStrukOnlineOtomatis(orderDocId, { ...order, ...updatePayload });
+
+                        closePaymentProofModal();
+                        showToast(`Pesanan #${order.orderId} BERHASIL DITERIMA & TERVERIFIKASI! Stok telah dipotong.`, 'success');
+                        logActivity('Verifikasi Pesanan', `Menerima & memverifikasi pesanan online #${order.orderId} (Rp ${order.grandTotal.toLocaleString('id-ID')}). Stok barang dipotong.`);
+                        renderOnlineOrdersTable();
+                        updateOnlineOrdersCounters();
+                    } catch (err) {
+                        showToast('Gagal memverifikasi pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        // Aksi Kasir: Tolak / Batalkan Pesanan
+        async function rejectOnlineOrder(orderDocId) {
+            const rawOrder = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId || o.orderId === orderDocId);
+            if (!rawOrder) return;
+            const order = getNormalizedOrder(rawOrder);
+
+            showCustomConfirm(
+                'Tolak / Batalkan Pesanan',
+                `Apakah Anda yakin ingin menolak & membatalkan pesanan #${order.orderId}? Status diubah menjadi "cancelled" dan stok barang akan dikembalikan ke etalase toko.`,
+                async () => {
+                    try {
+                        // 1. Kembalikan stok barang ke etalase /stores/{storeId}/products jika pernah dipotong
+                        if (order.stockDeducted && !order.isStockRestored) {
+                            await restoreStockForOnlineOrder(order);
+                        }
+
+                        const updatePayload = {
+                            status: "cancelled",
+                            stockDeducted: false,
+                            isStockRestored: true,
+                            cancelledAt: new Date().toISOString(),
+                            cancelledBy: currentUser ? currentUser.name : 'Kasir'
+                        };
+
+                        // 2. Update status di Firestore path /stores/{storeId}/online_orders/{orderDocId}
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                            await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderDocId).update(updatePayload);
+                        } else {
+                            const localOrd = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId);
+                            if (localOrd) {
+                                Object.assign(localOrd, updatePayload);
+                                saveLocalOnlineOrders();
+                            }
+                        }
+
+                        closePaymentProofModal();
+                        showToast(`Pesanan #${order.orderId} dibatalkan & stok dikembalikan ke etalase.`, 'info');
+                        logActivity('Pembatalan Pesanan', `Menolak & membatalkan pesanan online #${order.orderId}. Stok barang dikembalikan.`);
+                        renderOnlineOrdersTable();
+                        updateOnlineOrdersCounters();
+                    } catch (err) {
+                        showToast('Gagal membatalkan pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        function reprintOnlineOrderReceipt(orderId) {
+            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId || o.orderId === orderId);
+            if (ord) {
+                cetakStrukOnlineOtomatis(orderId, ord, true);
+            }
+        }
+
+        // ==============================================================
+        // MODAL BUKTI TRANSFER & DETAIL PESANAN ONLINE (Base64)
+        // ==============================================================
+        function viewPaymentProof(orderId) {
+            const raw = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId || o.orderId === orderId);
+            if (!raw) return;
+            openPaymentProofModal(raw);
+        }
+
+        function openPaymentProofModal(orderData) {
+            const order = getNormalizedOrder(orderData);
+            currentViewingProofOrder = order;
+
+            const idEl = document.getElementById('proofModalOrderId');
+            const custEl = document.getElementById('proofModalCustomerName');
+            const phoneEl = document.getElementById('proofModalCustomerPhone');
+            const waLink = document.getElementById('proofModalWaLink');
+            const delivMethodEl = document.getElementById('proofModalDeliveryMethod');
+            const payMethodEl = document.getElementById('proofModalPaymentMethod');
+            const delivAddrEl = document.getElementById('proofModalDeliveryAddress');
+            const notesEl = document.getElementById('proofModalNotes');
+            const itemsCountEl = document.getElementById('proofModalItemsCount');
+            const itemsListEl = document.getElementById('proofModalItemsList');
+            const subtotalEl = document.getElementById('proofModalSubtotal');
+            const ongkirEl = document.getElementById('proofModalOngkir');
+            const totalEl = document.getElementById('proofModalOrderTotal');
+            const statusBadge = document.getElementById('proofModalStatusBadge');
+
+            if (idEl) idEl.innerText = order.orderId;
+            if (custEl) custEl.innerText = order.customerName;
+
+            const rawPhone = order.customerPhone || order.customerWhatsapp || '';
+            if (phoneEl) phoneEl.innerText = rawPhone || 'Tanpa WhatsApp';
+            if (waLink) {
+                const cleanPhone = sanitizeWhatsappNumber(rawPhone);
+                if (cleanPhone) {
+                    waLink.href = `https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(order.customerName)},%20terkait%20pesanan%20Anda%20#${encodeURIComponent(order.orderId)}:`;
+                    waLink.classList.remove('hidden');
+                } else {
+                    waLink.classList.add('hidden');
+                }
+            }
+
+            if (delivMethodEl) {
+                delivMethodEl.innerText = order.deliveryMethod === 'antar' ? 'antar (Diantar)' : 'ambil (Ambil di Toko)';
+                delivMethodEl.className = order.deliveryMethod === 'antar' ? 'bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded' : 'bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded';
+            }
+
+            if (payMethodEl) {
+                payMethodEl.innerText = order.paymentMethod === 'transfer' ? 'transfer (Bank)' : 'cash (Tunai)';
+                payMethodEl.className = order.paymentMethod === 'transfer' ? 'bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded' : 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded';
+            }
+
+            if (delivAddrEl) delivAddrEl.innerText = order.deliveryAddress || '-';
+            if (notesEl) notesEl.innerText = order.notes ? `"${order.notes}"` : '-';
+
+            if (itemsCountEl) itemsCountEl.innerText = `${order.items.length} item`;
+            if (itemsListEl) {
+                itemsListEl.innerHTML = order.items.map(it => `
+                    <div class="flex justify-between items-center py-1">
+                        <div class="truncate pr-2">
+                            <span class="font-bold text-slate-800 block truncate">${escapeHtml(it.nama)}</span>
+                            <span class="text-[10px] text-slate-500 font-mono">ID: ${escapeHtml(it.id || '-')} • ${it.qty} unit x Rp ${it.hargaJual.toLocaleString('id-ID')}</span>
+                        </div>
+                        <span class="font-bold text-slate-800 text-xs shrink-0">Rp ${(it.qty * it.hargaJual).toLocaleString('id-ID')}</span>
+                    </div>
+                `).join('');
+            }
+
+            if (subtotalEl) subtotalEl.innerText = 'Rp ' + order.subtotal.toLocaleString('id-ID');
+            if (ongkirEl) ongkirEl.innerText = 'Rp ' + order.ongkir.toLocaleString('id-ID');
+            if (totalEl) totalEl.innerText = 'Rp ' + order.grandTotal.toLocaleString('id-ID');
+
+            if (statusBadge) {
+                statusBadge.innerText = order.status;
+                if (order.status === 'Pending') {
+                    statusBadge.className = 'bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-300 animate-pulse';
+                } else if (order.status === 'Verified') {
+                    statusBadge.className = 'bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-300';
+                } else if (order.status === 'cancelled') {
+                    statusBadge.className = 'bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-rose-300';
+                } else {
+                    statusBadge.className = 'bg-slate-200 text-slate-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-slate-300';
+                }
+            }
+
+            // Bukti transfer Base64
+            const imgEl = document.getElementById('paymentProofImg');
+            const fallbackEl = document.getElementById('paymentProofEmptyFallback');
+            const acceptBtn = document.getElementById('proofModalAcceptBtn');
+            const rejectBtn = document.getElementById('proofModalRejectBtn');
+
+            if (order.status === 'Pending') {
+                if (acceptBtn) acceptBtn.classList.remove('hidden');
+                if (rejectBtn) rejectBtn.classList.remove('hidden');
+            } else {
+                if (acceptBtn) acceptBtn.classList.add('hidden');
+                if (rejectBtn) rejectBtn.classList.add('hidden');
+            }
+
+            const proofUrl = order.paymentProofUrl;
+            if (proofUrl && proofUrl.trim().length > 10) {
+                imgEl.src = proofUrl;
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            } else {
+                imgEl.src = '';
+                imgEl.classList.add('hidden');
+                fallbackEl.classList.remove('hidden');
+            }
+
+            document.getElementById('paymentProofModal').classList.remove('hidden');
+        }
+
+        function closePaymentProofModal() {
+            document.getElementById('paymentProofModal').classList.add('hidden');
+            currentViewingProofOrder = null;
+        }
+
+        function acceptCurrentProofOrder() {
+            if (!currentViewingProofOrder) return;
+            const orderDocId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.docId || currentViewingProofOrder.id || currentViewingProofOrder.orderId;
+            acceptOnlineOrderPayment(orderDocId);
+        }
+
+        function rejectCurrentProofOrder() {
+            if (!currentViewingProofOrder) return;
+            const orderDocId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.docId || currentViewingProofOrder.id || currentViewingProofOrder.orderId;
+            rejectOnlineOrder(orderDocId);
+        }
+
+        // ==============================================================
+        // RENDER TABEL PESANAN ONLINE (TAB-PELANGGAN-ONLINE)
+        // ==============================================================
         function renderOnlineOrdersTable() {
             const tbody = document.getElementById('onlineOrdersTableBody');
             if (!tbody) return;
 
-            let filtered = [...onlineOrdersList];
+            let filtered = onlineOrdersList.map(o => getNormalizedOrder(o));
 
             // Filter status
             if (onlineOrderStatusFilter !== 'all') {
-                filtered = filtered.filter(o => o.status === onlineOrderStatusFilter);
+                const targetFilter = onlineOrderStatusFilter.toLowerCase();
+                filtered = filtered.filter(o => o.status.toLowerCase() === targetFilter);
             }
 
-            // Filter keyword pencarian
+            // Filter pencarian
             if (onlineOrdersSearchKeyword) {
                 filtered = filtered.filter(o => {
                     const name = (o.customerName || '').toLowerCase();
-                    const phone = (o.customerPhone || '').toLowerCase();
-                    const id = (o.orderNumber || o.firestoreId || '').toLowerCase();
-                    const addr = (o.customerAddress || '').toLowerCase();
+                    const phone = (o.customerPhone || o.customerWhatsapp || '').toLowerCase();
+                    const id = (o.orderId || '').toLowerCase();
+                    const addr = (o.deliveryAddress || '').toLowerCase();
+                    const notes = (o.notes || '').toLowerCase();
                     return name.includes(onlineOrdersSearchKeyword) || 
                            phone.includes(onlineOrdersSearchKeyword) || 
                            id.includes(onlineOrdersSearchKeyword) ||
-                           addr.includes(onlineOrdersSearchKeyword);
+                           addr.includes(onlineOrdersSearchKeyword) ||
+                           notes.includes(onlineOrdersSearchKeyword);
                 });
             }
 
@@ -9931,45 +10584,40 @@
             }
 
             tbody.innerHTML = paged.map(order => {
-                const orderId = order.firestoreId || order.id;
-                const orderNum = order.orderNumber || ('ORD-' + orderId.slice(-6).toUpperCase());
+                const docId = order.firestoreId || order.docId || order.id || order.orderId;
+                const orderNum = order.orderId;
                 const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleString('id-ID') : '-';
 
-                // WhatsApp clean URL
-                const rawPhone = order.customerPhone || '';
+                const rawPhone = order.customerPhone || order.customerWhatsapp || '';
                 const cleanPhone = sanitizeWhatsappNumber(rawPhone);
-                const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(order.customerName || 'Pelanggan')},%20terkait%20pesanan%20Anda%20${encodeURIComponent(orderNum)}%20di%20${encodeURIComponent(dbSettings.storeName || 'Toko')}:` : '#';
+                const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(order.customerName)},%20terkait%20pesanan%20Anda%20#${encodeURIComponent(orderNum)}%20di%20${encodeURIComponent(dbSettings.storeName || 'Toko')}:` : '#';
 
                 // Status Badge
                 let statusBadge = '';
-                if (order.status === 'pending') {
-                    statusBadge = `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span><span>Menunggu Verifikasi</span></span>`;
-                } else if (order.status === 'verified') {
-                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><i class="fa-solid fa-check text-[10px]"></i><span>Terverifikasi (Diproses)</span></span>`;
+                if (order.status === 'Pending') {
+                    statusBadge = `<span class="bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping"></span><span>Pending</span></span>`;
+                } else if (order.status === 'Verified') {
+                    statusBadge = `<span class="bg-emerald-100 text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 shadow-xs"><i class="fa-solid fa-check text-[10px]"></i><span>Verified</span></span>`;
+                } else if (order.status === 'cancelled') {
+                    statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-ban text-[10px]"></i><span>cancelled</span></span>`;
                 } else if (order.status === 'expired') {
-                    statusBadge = `<span class="bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-clock text-[10px]"></i><span>Expired (Stok Rollback)</span></span>`;
-                } else if (order.status === 'rejected') {
-                    statusBadge = `<span class="bg-rose-100 text-rose-700 border border-rose-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-xmark text-[10px]"></i><span>Ditolak & Batal</span></span>`;
+                    statusBadge = `<span class="bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-clock text-[10px]"></i><span>expired</span></span>`;
                 } else {
                     statusBadge = `<span class="bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full text-[10px] font-bold inline-block">${escapeHtml(order.status)}</span>`;
                 }
 
-                // Delivery & Payment Badge
-                const isDelivery = (order.deliveryMethod || '').toLowerCase() === 'diantar';
-                const deliveryBadge = isDelivery
-                    ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-motorcycle text-[10px]"></i><span>Diantar (Delivery)</span></span>`
-                    : `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-store text-[10px]"></i><span>Ambil Sendiri</span></span>`;
+                // Delivery badge
+                const deliveryBadge = order.deliveryMethod === 'antar'
+                    ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-motorcycle text-[10px]"></i><span>antar</span></span>`
+                    : `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-store text-[10px]"></i><span>ambil</span></span>`;
 
-                const isBankTransfer = (order.paymentMethod || '').toLowerCase().includes('transfer');
-                const paymentBadge = isBankTransfer
-                    ? `<span class="text-indigo-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-building-columns text-[10px] mr-1"></i>${escapeHtml(order.bankName || 'Transfer Bank')}</span>`
-                    : `<span class="text-emerald-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-money-bill-wave text-[10px] mr-1"></i>Tunai (Cash di Toko)</span>`;
+                // Payment badge
+                const paymentBadge = order.paymentMethod === 'transfer'
+                    ? `<span class="text-indigo-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-building-columns text-[10px] mr-1"></i>transfer</span>`
+                    : `<span class="text-emerald-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-money-bill-wave text-[10px] mr-1"></i>cash</span>`;
 
                 // Items summary string
-                const itemsSummary = (order.items || []).map(i => `${i.qty}x ${i.name}`).join(', ');
-
-                // Action buttons
-                const hasProof = !!(order.paymentProofUrl && order.paymentProofUrl.trim().length > 10);
+                const itemsSummary = (order.items || []).map(i => `${i.qty}x ${i.nama}`).join(', ');
 
                 return `
                     <tr class="hover:bg-slate-50/80 transition">
@@ -9979,21 +10627,22 @@
                             ${order.isPrinted ? `<span class="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-flex items-center gap-1 mt-1"><i class="fa-solid fa-print text-[8px]"></i>Tercetak</span>` : ''}
                         </td>
                         <td class="p-3">
-                            <div class="font-bold text-slate-800 text-xs">${escapeHtml(order.customerName || 'Pelanggan')}</div>
+                            <div class="font-bold text-slate-800 text-xs">${escapeHtml(order.customerName)}</div>
                             ${rawPhone ? `
                                 <a href="${waUrl}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-mono text-[11px] font-semibold inline-flex items-center gap-1 mt-0.5 hover:underline" title="Chat WhatsApp Pelanggan">
                                     <i class="fa-brands fa-whatsapp text-emerald-500"></i>
                                     <span>${escapeHtml(rawPhone)}</span>
                                 </a>
                             ` : '<span class="text-slate-400 text-[11px]">Tanpa WhatsApp</span>'}
-                            ${order.customerAddress ? `<div class="text-[10px] text-slate-400 truncate max-w-[160px] mt-0.5" title="${escapeHtml(order.customerAddress)}"><i class="fa-solid fa-location-dot text-[9px] mr-0.5"></i>${escapeHtml(order.customerAddress)}</div>` : ''}
+                            ${order.deliveryAddress && order.deliveryAddress !== '-' ? `<div class="text-[10px] text-slate-500 truncate max-w-[170px] mt-0.5" title="${escapeHtml(order.deliveryAddress)}"><i class="fa-solid fa-location-dot text-[9px] mr-0.5 text-slate-400"></i>${escapeHtml(order.deliveryAddress)}</div>` : ''}
                         </td>
                         <td class="p-3">
-                            ${deliveryBadge}
-                            ${paymentBadge}
+                            <div class="flex items-center gap-1">${deliveryBadge} ${paymentBadge}</div>
+                            ${order.ongkir > 0 ? `<div class="text-[10px] text-slate-500 mt-0.5">+ Ongkir: Rp ${order.ongkir.toLocaleString('id-ID')}</div>` : ''}
+                            ${order.notes ? `<div class="text-[10px] text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 mt-1 truncate max-w-[160px]" title="${escapeHtml(order.notes)}"><i class="fa-solid fa-note-sticky text-[9px] mr-0.5"></i>${escapeHtml(order.notes)}</div>` : ''}
                         </td>
                         <td class="p-3 text-right">
-                            <div class="font-extrabold text-emerald-600 text-sm">Rp ${(Number(order.total) || 0).toLocaleString('id-ID')}</div>
+                            <div class="font-extrabold text-emerald-600 text-sm">Rp ${order.grandTotal.toLocaleString('id-ID')}</div>
                             <div class="text-[10px] text-slate-400 truncate max-w-[150px] mt-0.5 text-right" title="${escapeHtml(itemsSummary)}">${escapeHtml(itemsSummary || 'Rincian produk')}</div>
                         </td>
                         <td class="p-3 text-center">
@@ -10001,28 +10650,26 @@
                         </td>
                         <td class="p-3 text-center">
                             <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                ${isBankTransfer ? `
-                                    <button type="button" onclick="viewPaymentProof('${orderId}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Lihat Bukti Transfer Pelanggan">
-                                        <i class="fa-solid fa-image text-[11px]"></i>
-                                        <span>Lihat Bukti</span>
-                                    </button>
-                                ` : ''}
+                                <button type="button" onclick="viewPaymentProof('${docId}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Lihat Bukti Transfer & Detail Pesanan">
+                                    <i class="fa-solid fa-receipt text-[11px]"></i>
+                                    <span>Bukti & Detail</span>
+                                </button>
 
-                                ${order.status === 'pending' ? `
-                                    <button type="button" onclick="acceptOnlineOrderPayment('${orderId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs" title="Terima Pembayaran & Otomatis Cetak Struk">
+                                ${order.status === 'Pending' ? `
+                                    <button type="button" onclick="acceptOnlineOrderPayment('${docId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs" title="Terima & Verifikasi (Potong Stok Otomatis)">
                                         <i class="fa-solid fa-check text-[11px]"></i>
-                                        <span>Terima</span>
+                                        <span>Terima & Verifikasi</span>
                                     </button>
-                                    <button type="button" onclick="rejectOnlineOrder('${orderId}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="Tolak Bukti / Batalkan Pesanan">
-                                        <i class="fa-solid fa-xmark text-[11px]"></i>
-                                        <span>Tolak</span>
+                                    <button type="button" onclick="rejectOnlineOrder('${docId}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="Tolak / Batalkan (Kembalikan Stok)">
+                                        <i class="fa-solid fa-ban text-[11px]"></i>
+                                        <span>Tolak / Batalkan</span>
                                     </button>
                                 ` : ''}
 
-                                ${(order.status === 'verified' || order.status === 'completed') ? `
-                                    <button type="button" onclick="reprintOnlineOrderReceipt('${orderId}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Cetak Ulang Struk Thermal ESC/POS">
+                                ${order.status === 'Verified' ? `
+                                    <button type="button" onclick="reprintOnlineOrderReceipt('${docId}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Cetak Ulang Struk Thermal ESC/POS">
                                         <i class="fa-solid fa-print text-[11px]"></i>
-                                        <span>Cetak Ulang</span>
+                                        <span>Cetak Struk</span>
                                     </button>
                                 ` : ''}
                             </div>
@@ -10067,335 +10714,9 @@
             renderOnlineOrdersTable();
         }
 
-        // ==========================================
-        // 4. LOGIKA PENGEMBALIAN STOK OTOMATIS (EXPIRED ORDER WATCHER)
-        // ==========================================
-        async function rollbackExpiredOnlineOrderStock(orderId, orderData) {
-            console.log(`[Expired Order Watcher] Menjalankan rollback stok untuk pesanan expired #${orderData.orderNumber || orderId}...`);
-            try {
-                const items = orderData.items || [];
-                for (const item of items) {
-                    const qtyToReturn = Number(item.qty) || 1;
-                    const prod = dbProducts.find(p => 
-                        (item.firestoreId && p.firestoreId === item.firestoreId) || 
-                        (item.productId && p.firestoreId === item.productId) ||
-                        (item.barcode && p.barcode === item.barcode) ||
-                        (item.name && p.name.toLowerCase() === item.name.toLowerCase())
-                    );
-
-                    if (prod) {
-                        const newStock = (Number(prod.stock) || 0) + qtyToReturn;
-                        prod.stock = newStock;
-
-                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
-                                stock: newStock
-                            });
-                        }
-                    }
-                }
-
-                if (!isFirebaseConfigured || (currentUser && currentUser.isDemo)) {
-                    saveLocalProducts();
-                }
-                renderStockTable();
-                updateStockAlertBadges();
-
-                // Tandai isStockRestored: true di Firestore agar tidak dipanggil berulang-ulang
-                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                    await db.collection("online_orders").doc(orderId).update({
-                        isStockRestored: true,
-                        stockRestoredAt: new Date().toISOString()
-                    });
-                } else {
-                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-                    if (localOrd) {
-                        localOrd.isStockRestored = true;
-                        saveLocalOnlineOrders();
-                    }
-                }
-
-                showToast(`Pesanan #${orderData.orderNumber || orderId.slice(-6)} expired. Stok barang otomatis dikembalikan ke etalase!`, 'info');
-                logActivity('Rollback Stok Otomatis', `Mengembalikan stok produk untuk pesanan online #${orderData.orderNumber || orderId} yang berstatus expired.`);
-            } catch (err) {
-                console.error("Gagal rollback stok pesanan online expired:", err);
-            }
-        }
-
-        // ==========================================
-        // 5. FITUR AUTO-PRINT DAN COMMITTING TRANSAKSI UTAMA
-        // ==========================================
-        async function cetakStrukOnlineOtomatis(orderId, order, isManualReprint = false) {
-            if (order.isPrinted && !isManualReprint) {
-                return;
-            }
-
-            console.log(`[Auto-Print] Memproses cetak struk pesanan online #${order.orderNumber || orderId}...`);
-
-            const orderTrx = {
-                id: order.orderNumber || ('ONL-' + (orderId.slice(-6).toUpperCase())),
-                date: order.createdAt || new Date().toISOString(),
-                items: (order.items || []).map(i => ({
-                    name: i.name,
-                    qty: Number(i.qty) || 1,
-                    sellPrice: Number(i.sellPrice || i.price) || 0,
-                    buyPrice: Number(i.buyPrice) || 0
-                })),
-                subtotal: Number(order.subtotal) || Number(order.total) || 0,
-                discount: Number(order.discount) || 0,
-                total: Number(order.total) || 0,
-                cash: Number(order.total) || 0,
-                change: 0,
-                customer: `${order.customerName || 'Pelanggan'} (${order.deliveryMethod || 'Online'})`,
-                cashier: 'Kasir Online'
-            };
-
-            const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
-            const hasWebPrinter = bluetoothCharacteristic || usbDevice;
-
-            let printSuccess = false;
-
-            if (isNativeConnected || hasWebPrinter) {
-                try {
-                    const buffer = generateEscPosBuffer(orderTrx);
-                    await sendRawToPrinter(buffer);
-                    printSuccess = true;
-                    showToast(`Struk Pesanan Online #${orderTrx.id} BERHASIL DICETAK OTOMATIS!`, 'success');
-                    logActivity('Cetak Otomatis Online', `Struk pesanan online #${orderTrx.id} dicetak ke printer thermal.`);
-                } catch (e) {
-                    console.warn("Gagal cetak otomatis thermal:", e);
-                    showToast(`Cetak thermal order #${orderTrx.id} tertunda: ${e.message}`, 'warning');
-                }
-            } else {
-                if (isManualReprint) {
-                    pendingTransactionForPrint = orderTrx;
-                    showReceiptPreviewModal(orderTrx);
-                } else {
-                    showToast(`Pesanan #${orderTrx.id} terverifikasi. Sambungkan printer thermal untuk auto-print!`, 'info');
-                }
-            }
-
-            // Mekanisme Penguncian Cetak: update isPrinted: true agar printer tidak mencetak berulang-ulang
-            try {
-                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                    await db.collection("online_orders").doc(orderId).update({
-                        isPrinted: true,
-                        printedAt: new Date().toISOString()
-                    });
-                } else {
-                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-                    if (localOrd) {
-                        localOrd.isPrinted = true;
-                        saveLocalOnlineOrders();
-                        renderOnlineOrdersTable();
-                    }
-                }
-            } catch (err) {
-                console.warn("Gagal mengunci isPrinted:", err);
-            }
-        }
-
-        // Salin skema objek belanjaan ke /transactions
-        async function commitOnlineOrderToTransactions(orderId, order) {
-            if (order.isCommittedToTransactions) {
-                return;
-            }
-
-            console.log(`[Committing Transaksi] Menyalin data pesanan online #${order.orderNumber || orderId} ke koleksi utama /transactions...`);
-
-            try {
-                const transactionId = order.orderNumber || ('TRX-ONL-' + Date.now().toString().slice(-6));
-                const newTrx = {
-                    storeId: currentStoreId,
-                    id: transactionId,
-                    onlineOrderId: orderId,
-                    date: order.createdAt || new Date().toISOString(),
-                    items: JSON.parse(JSON.stringify(order.items || [])),
-                    subtotal: Number(order.subtotal) || Number(order.total) || 0,
-                    discount: Number(order.discount) || 0,
-                    total: Number(order.total) || 0,
-                    cash: Number(order.total) || 0,
-                    change: 0,
-                    paymentMethod: order.paymentMethod || 'Online',
-                    deliveryMethod: order.deliveryMethod || 'Ambil Sendiri',
-                    customer: `${order.customerName || 'Pelanggan'} (Online)`,
-                    customerPhone: order.customerPhone || '',
-                    customerAddress: order.customerAddress || '',
-                    cashier: 'Pesanan Online',
-                    cashier_uid: 'online_order_sync',
-                    isOnlineOrder: true
-                };
-
-                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                    const docRef = await db.collection('stores').doc(currentStoreId).collection('transactions').add(newTrx);
-                    newTrx.firestoreId = docRef.id;
-
-                    await db.collection("online_orders").doc(orderId).update({
-                        isCommittedToTransactions: true,
-                        committedAt: new Date().toISOString(),
-                        transactionDocId: docRef.id
-                    });
-                } else {
-                    newTrx.firestoreId = 'trx_onl_' + Date.now();
-                    dbTransactions.unshift(newTrx);
-                    saveLocalTransactions();
-                    const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-                    if (localOrd) {
-                        localOrd.isCommittedToTransactions = true;
-                        saveLocalOnlineOrders();
-                    }
-                    renderHistory();
-                    updateChart();
-                }
-
-                logActivity('Transaksi Online Masuk', `Transaksi #${transactionId} (${order.customerName}) otomatis dibukukan ke omset kasir.`);
-                updateOnlineOrdersCounters();
-            } catch (err) {
-                console.error("Gagal committing transaksi online ke riwayat kasir:", err);
-            }
-        }
-
-        // Aksi Kasir: Terima Pembayaran
-        async function acceptOnlineOrderPayment(orderId) {
-            showCustomConfirm(
-                'Terima Pembayaran Online',
-                'Konfirmasi bahwa pembayaran transfer pesanan ini VALID? Status akan diubah menjadi TERVERIFIKASI dan struk akan otomatis dicetak.',
-                async () => {
-                    try {
-                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                            await db.collection("online_orders").doc(orderId).update({
-                                status: 'verified',
-                                verifiedAt: new Date().toISOString(),
-                                verifiedBy: currentUser ? currentUser.name : 'Kasir'
-                            });
-                        } else {
-                            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-                            if (ord) {
-                                ord.status = 'verified';
-                                ord.verifiedAt = new Date().toISOString();
-                                ord.verifiedBy = currentUser ? currentUser.name : 'Kasir';
-                                saveLocalOnlineOrders();
-                                cetakStrukOnlineOtomatis(orderId, ord);
-                                commitOnlineOrderToTransactions(orderId, ord);
-                                renderOnlineOrdersTable();
-                            }
-                        }
-                        showToast('Pembayaran berhasil diverifikasi! Struk dicetak & omset tercatat.', 'success');
-                        closePaymentProofModal();
-                    } catch (err) {
-                        showToast('Gagal memverifikasi pesanan: ' + err.message, 'error');
-                    }
-                }
-            );
-        }
-
-        // Aksi Kasir: Tolak & Batalkan Pesanan
-        async function rejectOnlineOrder(orderId) {
-            showCustomConfirm(
-                'Tolak & Batalkan Pesanan',
-                'Apakah Anda yakin ingin menolak pesanan ini (misal bukti transfer palsu)? Status akan diubah menjadi DITOLAK dan stok barang akan otomatis dikembalikan.',
-                async () => {
-                    try {
-                        const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-                        if (ord && !ord.isStockRestored) {
-                            await rollbackExpiredOnlineOrderStock(orderId, ord);
-                        }
-                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                            await db.collection("online_orders").doc(orderId).update({
-                                status: 'rejected',
-                                rejectedAt: new Date().toISOString(),
-                                rejectedBy: currentUser ? currentUser.name : 'Kasir'
-                            });
-                        } else {
-                            if (ord) {
-                                ord.status = 'rejected';
-                                ord.rejectedAt = new Date().toISOString();
-                                ord.rejectedBy = currentUser ? currentUser.name : 'Kasir';
-                                saveLocalOnlineOrders();
-                                renderOnlineOrdersTable();
-                            }
-                        }
-                        showToast('Pesanan berhasil ditolak & stok dikembalikan.', 'info');
-                        closePaymentProofModal();
-                    } catch (err) {
-                        showToast('Gagal menolak pesanan: ' + err.message, 'error');
-                    }
-                }
-            );
-        }
-
-        function reprintOnlineOrderReceipt(orderId) {
-            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-            if (ord) {
-                cetakStrukOnlineOtomatis(orderId, ord, true);
-            }
-        }
-
-        // ==========================================
-        // MODAL BUKTI TRANSFER POP-UP
-        // ==========================================
-        function viewPaymentProof(orderId) {
-            const ord = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
-            if (!ord) return;
-            openPaymentProofModal(ord);
-        }
-
-        function openPaymentProofModal(order) {
-            currentViewingProofOrder = order;
-
-            const orderNum = order.orderNumber || ('ORD-' + (order.firestoreId || order.id).slice(-6).toUpperCase());
-            document.getElementById('proofModalOrderId').innerText = orderNum;
-            document.getElementById('proofModalCustomerName').innerText = order.customerName || '-';
-            document.getElementById('proofModalOrderTotal').innerText = 'Rp ' + (Number(order.total) || 0).toLocaleString('id-ID');
-            document.getElementById('proofModalBankName').innerText = order.bankName || (order.paymentMethod || 'Transfer Bank');
-
-            const imgEl = document.getElementById('paymentProofImg');
-            const fallbackEl = document.getElementById('paymentProofEmptyFallback');
-            const acceptBtn = document.getElementById('proofModalAcceptBtn');
-            const rejectBtn = document.getElementById('proofModalRejectBtn');
-
-            if (order.status === 'pending') {
-                if (acceptBtn) acceptBtn.classList.remove('hidden');
-                if (rejectBtn) rejectBtn.classList.remove('hidden');
-            } else {
-                if (acceptBtn) acceptBtn.classList.add('hidden');
-                if (rejectBtn) rejectBtn.classList.add('hidden');
-            }
-
-            const proofUrl = order.paymentProofUrl || order.proofUrl;
-            if (proofUrl && proofUrl.trim().length > 10) {
-                imgEl.src = proofUrl;
-                imgEl.classList.remove('hidden');
-                fallbackEl.classList.add('hidden');
-            } else {
-                imgEl.src = '';
-                imgEl.classList.add('hidden');
-                fallbackEl.classList.remove('hidden');
-            }
-
-            document.getElementById('paymentProofModal').classList.remove('hidden');
-        }
-
-        function closePaymentProofModal() {
-            document.getElementById('paymentProofModal').classList.add('hidden');
-            currentViewingProofOrder = null;
-        }
-
-        function acceptCurrentProofOrder() {
-            if (!currentViewingProofOrder) return;
-            const orderId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.id;
-            acceptOnlineOrderPayment(orderId);
-        }
-
-        function rejectCurrentProofOrder() {
-            if (!currentViewingProofOrder) return;
-            const orderId = currentViewingProofOrder.firestoreId || currentViewingProofOrder.id;
-            rejectOnlineOrder(orderId);
-        }
-
-        // ==========================================
+        // ==============================================================
         // SIMULASI PESANAN ONLINE (DEMO & TESTING)
-        // ==========================================
+        // ==============================================================
         function openSimulateOrderModal() {
             const listContainer = document.getElementById('simOrderProductsList');
             if (listContainer) {
@@ -10425,8 +10746,8 @@
             e.preventDefault();
             const custName = document.getElementById('simCustomerName').value.trim();
             const custPhone = document.getElementById('simCustomerPhone').value.trim();
-            const deliveryMethod = document.getElementById('simDeliveryMethod').value;
-            const paymentMethod = document.getElementById('simPaymentMethod').value;
+            const deliveryMethodVal = document.getElementById('simDeliveryMethod').value;
+            const paymentMethodVal = document.getElementById('simPaymentMethod').value;
             const custAddress = document.getElementById('simCustomerAddress').value.trim();
 
             const checkedBoxes = document.querySelectorAll('input[name="simProductCheck"]:checked');
@@ -10443,85 +10764,77 @@
                 if (prod) {
                     const price = Number(prod.sellPrice) || 0;
                     orderItems.push({
+                        id: prod.firestoreId,
                         productId: prod.firestoreId,
-                        firestoreId: prod.firestoreId,
+                        nama: prod.name,
                         name: prod.name,
                         barcode: prod.barcode,
                         qty: 1,
+                        hargaJual: price,
                         sellPrice: price,
                         buyPrice: Number(prod.buyPrice) || 0
                     });
                     subtotal += price;
-
-                    // Potong stok barang di toko saat pesanan masuk
-                    if (prod.stock > 0) {
-                        prod.stock = Math.max(0, prod.stock - 1);
-                    }
                 }
             });
 
-            // Status: jika Cash -> langsung verified, jika Transfer Bank -> pending (butuh verifikasi)
-            const isCash = paymentMethod === 'Cash';
-            const status = isCash ? 'verified' : 'pending';
+            const isDelivery = deliveryMethodVal.includes('antar') || deliveryMethodVal.includes('Diantar');
+            const deliveryMethod = isDelivery ? 'antar' : 'ambil';
+            const ongkir = isDelivery ? 10000 : 0;
+            const grandTotal = subtotal + ongkir;
 
-            const orderNum = 'ORD-ONL-' + Math.floor(1000 + Math.random() * 9000);
+            const isCash = paymentMethodVal === 'Cash' || paymentMethodVal.toLowerCase().includes('cash');
+            const paymentMethod = isCash ? 'cash' : 'transfer';
+            const status = isCash ? 'Verified' : 'Pending';
+
+            const orderNum = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
             const newOrder = {
-                storeId: currentStoreId || 'HJN-DEMO',
-                orderNumber: orderNum,
+                orderId: orderNum,
                 customerName: custName,
                 customerPhone: custPhone,
-                customerAddress: custAddress,
+                customerWhatsapp: custPhone,
                 deliveryMethod: deliveryMethod,
+                deliveryAddress: isDelivery ? custAddress : 'Ambil di Toko',
                 paymentMethod: paymentMethod,
-                bankName: paymentMethod === 'Transfer Bank' ? 'BCA Transfer' : 'Cash',
-                paymentProofUrl: paymentMethod === 'Transfer Bank' ? SAMPLE_BASE64_PROOF : '',
+                items: orderItems,
+                subtotal: subtotal,
+                ongkir: ongkir,
+                grandTotal: grandTotal,
+                notes: isDelivery ? 'Tolong packing rapi' : 'Ambil jam 4 sore',
                 status: status,
+                paymentProofUrl: !isCash ? SAMPLE_BASE64_PROOF : '',
+                stockDeducted: false,
                 isPrinted: false,
                 isCommittedToTransactions: false,
                 isStockRestored: false,
-                items: orderItems,
-                subtotal: subtotal,
-                discount: 0,
-                total: subtotal,
                 createdAt: new Date().toISOString()
             };
 
             closeSimulateOrderModal();
 
             try {
-                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo)) {
-                    // Update stock di Firestore
-                    for (const item of orderItems) {
-                        const prod = dbProducts.find(p => p.firestoreId === item.productId);
-                        if (prod) {
-                            await db.collection('stores').doc(currentStoreId).collection('products').doc(prod.firestoreId).update({
-                                stock: prod.stock
-                            });
-                        }
-                    }
-                    // Add ke collection online_orders
-                    await db.collection("online_orders").add(newOrder);
+                if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                    // Simpan langsung ke path resmi /stores/{storeId}/online_orders
+                    await db.collection("stores").doc(currentStoreId).collection("online_orders").add(newOrder);
                 } else {
-                    saveLocalProducts();
-                    renderStockTable();
                     newOrder.firestoreId = 'onl_' + Date.now();
                     newOrder.id = newOrder.firestoreId;
-                    onlineOrdersList.unshift(newOrder);
+                    onlineOrdersList.unshift(getNormalizedOrder(newOrder));
                     saveLocalOnlineOrders();
                     renderOnlineOrdersTable();
 
-                    // Trigger sound & notification
-                    if (status === 'pending') {
+                    if (status === 'Pending') {
                         playBeepSound();
                         triggerHapticFeedback(120);
                         showToast(`Pesanan Online Baru #${orderNum} dari ${custName} masuk!`, 'info');
-                    } else if (status === 'verified') {
-                        cetakStrukOnlineOtomatis(newOrder.firestoreId, newOrder);
+                    } else if (status === 'Verified') {
+                        await deductStockForOnlineOrder(newOrder);
                         commitOnlineOrderToTransactions(newOrder.firestoreId, newOrder);
+                        cetakStrukOnlineOtomatis(newOrder.firestoreId, newOrder);
                     }
                 }
 
-                showToast(`Pesanan online simulasi #${orderNum} berhasil dibuat!`, 'success');
+                showToast(`Pesanan online simulasi #${orderNum} berhasil dikirim ke /stores/${currentStoreId || 'store'}/online_orders!`, 'success');
                 switchTab('pelanggan-online');
             } catch (err) {
                 showToast('Gagal mengirim simulasi order: ' + err.message, 'error');
