@@ -6273,7 +6273,8 @@
 
             // Metadata Transaksi Kasir & Pelanggan (Rata Kiri)
             commands.push(encoder.encode(ESC + '\x61\x00')); // Align left
-            commands.push(encoder.encode(formatLineTwoColumns('No. Nota:', trx.id || '', maxChars) + '\n'));
+            const receiptNotaId = String((trx && (trx.id || trx.orderId)) || ('TRX-' + Date.now().toString().slice(-6)));
+            commands.push(encoder.encode(formatLineTwoColumns('No. Nota:', receiptNotaId, maxChars) + '\n'));
             const trxDate = trx.date ? new Date(trx.date).toLocaleDateString('id-ID') : new Date().toLocaleDateString('id-ID');
             commands.push(encoder.encode(formatLineTwoColumns('Tanggal :', trxDate, maxChars) + '\n'));
             commands.push(encoder.encode(formatLineTwoColumns('Kasir   :', trx.cashier || (currentUser ? currentUser.name : 'Kasir'), maxChars) + '\n'));
@@ -6368,8 +6369,24 @@
         }
 
         async function cetakStruk(dataTransaksi) {
+            if (!dataTransaksi) return;
             pendingTransactionForPrint = dataTransaksi;
             showReceiptPreviewModal(dataTransaksi);
+
+            const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
+            const hasWebPrinter = bluetoothCharacteristic || usbDevice;
+
+            if (isNativeConnected || hasWebPrinter) {
+                try {
+                    const buffer = generateEscPosBuffer(dataTransaksi);
+                    await sendRawToPrinter(buffer);
+                    showToast(`Struk #${dataTransaksi.id} berhasil dicetak ke printer thermal!`, 'success');
+                    logActivity('Cetak Struk', `Mencetak struk ${dataTransaksi.id} via Thermal Printer ESC/POS.`);
+                } catch (e) {
+                    console.warn("Gagal cetak thermal:", e);
+                    showToast('Gagal cetak thermal: ' + e.message, 'warning');
+                }
+            }
         }
 
         function printReceiptViaBrowserFallback(trx) {
@@ -9861,11 +9878,8 @@
                                     showToast(`Pesanan Online Baru #${normalized.orderId} dari ${normalized.customerName}!`, 'info');
                                 }
 
-                                // Auto-Print jika status "Verified" dan belum dicetak
+                                // Sinkronisasi transaksi jika status "Verified" dari device lain yang belum dicatat ke kasir lokal
                                 if ((change.type === 'added' || change.type === 'modified') && normalized.status === 'Verified') {
-                                    if (!docData.isPrinted) {
-                                        cetakStrukOnlineOtomatis(docId, normalized);
-                                    }
                                     if (!docData.isCommittedToTransactions) {
                                         commitOnlineOrderToTransactions(docId, normalized);
                                     }
@@ -10288,31 +10302,8 @@
                 cashier_uid: 'online_order_sync'
             };
 
-            pendingTransactionForPrint = orderTrx;
-
-            const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
-            const hasWebPrinter = bluetoothCharacteristic || usbDevice;
-
-            let printSuccess = false;
-
-            if (isNativeConnected || hasWebPrinter) {
-                try {
-                    const buffer = generateEscPosBuffer(orderTrx);
-                    await sendRawToPrinter(buffer);
-                    printSuccess = true;
-                    showToast(`Struk Pesanan Online #${order.orderId} BERHASIL DICETAK!`, 'success');
-                    logActivity('Cetak Otomatis Online', `Struk pesanan online #${order.orderId} dicetak ke printer thermal.`);
-                } catch (e) {
-                    console.warn("Gagal cetak otomatis thermal:", e);
-                    showToast(`Cetak thermal order #${order.orderId} tertunda: ${e.message}`, 'warning');
-                }
-            } else {
-                if (isManualReprint) {
-                    showReceiptPreviewModal(orderTrx);
-                } else {
-                    showToast(`Pesanan #${order.orderId} diverifikasi. Hubungkan printer thermal untuk cetak otomatis.`, 'info');
-                }
-            }
+            // Delegasikan pencetakan langsung ke fungsi cetakStruk resmi
+            await cetakStruk(orderTrx);
 
             // Kunci isPrinted agar printer tidak mencetak berulang
             try {
@@ -10334,45 +10325,63 @@
             }
         }
 
-        // Salin pesanan online ke riwayat transaksi utama kasir
+        // Salin pesanan online ke riwayat transaksi utama kasir dan kembalikan objek transaksi resmi
         async function commitOnlineOrderToTransactions(orderId, orderData) {
-            if (orderData.isCommittedToTransactions) {
-                return;
-            }
-
             const order = getNormalizedOrder(orderData);
             console.log(`[Committing Transaksi] Mencatat pesanan #${order.orderId} ke koleksi transaksi kasir...`);
 
             try {
-                const transactionId = order.orderId;
+                // Periksa jika sudah pernah dibukukan sebelumnya
+                if (orderData.isCommittedToTransactions && orderData.transactionId) {
+                    const existing = dbTransactions.find(t => t.id === orderData.transactionId || t.onlineOrderId === orderId);
+                    if (existing) {
+                        return existing;
+                    }
+                }
+
+                // Generate ID Transaksi resmi standar kasir (TRX-XXXXXX)
+                const officialTransactionId = (order.orderId && String(order.orderId).startsWith('TRX-'))
+                    ? order.orderId
+                    : ('TRX-' + Date.now().toString().slice(-6));
+
                 const newTrx = {
                     storeId: currentStoreId,
-                    id: transactionId,
+                    id: officialTransactionId,
+                    orderId: order.orderId || officialTransactionId,
                     onlineOrderId: orderId,
                     date: order.createdAt || new Date().toISOString(),
-                    items: order.items.map(it => ({
-                        id: it.id,
-                        name: it.nama,
-                        nama: it.nama,
-                        qty: it.qty,
-                        sellPrice: it.hargaJual,
-                        hargaJual: it.hargaJual,
-                        buyPrice: it.buyPrice || 0
-                    })),
-                    subtotal: order.subtotal,
-                    ongkir: order.ongkir,
-                    discount: 0,
-                    total: order.grandTotal,
-                    cash: order.grandTotal,
+                    items: (order.items || []).map(it => {
+                        const sPrice = Number(it.sellPrice !== undefined ? it.sellPrice : (it.hargaJual !== undefined ? it.hargaJual : it.price)) || 0;
+                        const bPrice = Number(it.buyPrice) || 0;
+                        const qty = Number(it.qty) || 1;
+                        const name = String(it.name || it.nama || 'Produk');
+                        return {
+                            id: it.id || it.productId || '',
+                            firestoreId: it.id || it.productId || '',
+                            name: name,
+                            nama: name,
+                            qty: qty,
+                            sellPrice: sPrice,
+                            hargaJual: sPrice,
+                            buyPrice: bPrice,
+                            unit: it.unit || 'pcs'
+                        };
+                    }),
+                    subtotal: Number(order.subtotal) || 0,
+                    ongkir: Number(order.ongkir) || 0,
+                    discount: Number(order.discount) || 0,
+                    total: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
+                    cash: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
                     change: 0,
-                    notes: order.notes,
-                    paymentMethod: order.paymentMethod,
-                    deliveryMethod: order.deliveryMethod,
-                    deliveryAddress: order.deliveryAddress,
-                    customer: `${order.customerName} (Online - ${order.deliveryMethod})`,
-                    customerPhone: order.customerPhone || order.customerWhatsapp,
-                    cashier: 'Pesanan Online',
-                    cashier_uid: 'online_order_sync',
+                    notes: order.notes || '',
+                    paymentMethod: order.paymentMethod || 'transfer',
+                    deliveryMethod: order.deliveryMethod || 'antar',
+                    deliveryAddress: order.deliveryAddress || '-',
+                    customer: `${order.customerName} (Online - ${order.deliveryMethod === 'antar' ? 'Antar' : 'Ambil'})`,
+                    customerName: order.customerName,
+                    customerPhone: order.customerPhone || order.customerWhatsapp || '',
+                    cashier: currentUser ? currentUser.name : 'Kasir',
+                    cashier_uid: (currentUser && currentUser.uid) ? currentUser.uid : 'online_order_sync',
                     isOnlineOrder: true
                 };
 
@@ -10383,6 +10392,7 @@
                     await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderId).update({
                         isCommittedToTransactions: true,
                         committedAt: new Date().toISOString(),
+                        transactionId: newTrx.id,
                         transactionDocId: docRef.id
                     });
                 } else {
@@ -10392,16 +10402,40 @@
                     const localOrd = onlineOrdersList.find(o => o.firestoreId === orderId || o.id === orderId);
                     if (localOrd) {
                         localOrd.isCommittedToTransactions = true;
+                        localOrd.transactionId = newTrx.id;
+                        localOrd.transactionDocId = newTrx.firestoreId;
                         saveLocalOnlineOrders();
                     }
                     renderHistory();
                     updateChart();
                 }
 
-                logActivity('Transaksi Online Dibukukan', `Pesanan online #${transactionId} (${order.customerName}) senilai Rp ${order.grandTotal.toLocaleString('id-ID')} berhasil dicatat ke omset kasir.`);
+                logActivity('Transaksi Online Dibukukan', `Pesanan online #${order.orderId} (${order.customerName}) resmi dibukukan dengan ID ${newTrx.id} senilai Rp ${newTrx.total.toLocaleString('id-ID')}.`);
                 updateOnlineOrdersCounters();
+
+                return newTrx;
             } catch (err) {
                 console.error("Gagal committing transaksi online ke riwayat kasir:", err);
+                const fallbackId = 'TRX-' + Date.now().toString().slice(-6);
+                return {
+                    storeId: currentStoreId,
+                    id: fallbackId,
+                    date: new Date().toISOString(),
+                    items: (order.items || []).map(it => ({
+                        name: it.name || it.nama || 'Produk',
+                        sellPrice: Number(it.sellPrice !== undefined ? it.sellPrice : it.hargaJual) || 0,
+                        qty: Number(it.qty) || 1,
+                        buyPrice: Number(it.buyPrice) || 0
+                    })),
+                    subtotal: Number(order.subtotal) || 0,
+                    ongkir: Number(order.ongkir) || 0,
+                    discount: 0,
+                    total: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
+                    cash: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
+                    change: 0,
+                    customer: `${order.customerName} (${order.deliveryMethod === 'antar' ? 'Antar' : 'Ambil'})`,
+                    cashier: currentUser ? currentUser.name : 'Kasir'
+                };
             }
         }
 
@@ -10411,15 +10445,21 @@
         // Aksi Kasir: Terima & Verifikasi Pesanan
         async function acceptOnlineOrderPayment(orderDocId) {
             const rawOrder = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId || o.orderId === orderDocId);
-            if (!rawOrder) return;
+            if (!rawOrder) {
+                showToast('Data pesanan online tidak ditemukan!', 'error');
+                return;
+            }
             const order = getNormalizedOrder(rawOrder);
 
             showCustomConfirm(
                 'Terima & Verifikasi Pesanan',
-                `Konfirmasi verifikasi pembayaran untuk pesanan #${order.orderId} senilai Rp ${order.grandTotal.toLocaleString('id-ID')}? Status diubah menjadi "Verified", stok produk langsung dipotong di /stores/{storeId}/products, dan struk dicetak.`,
+                `Konfirmasi verifikasi pembayaran untuk pesanan #${order.orderId} (${order.customerName}) senilai Rp ${order.grandTotal.toLocaleString('id-ID')}? Status diubah menjadi "Verified", stok produk langsung dipotong, transaksi dibukukan, dan struk dicetak.`,
                 async () => {
                     try {
-                        // 1. Potong stok produk di /stores/{storeId}/products/{productId} jika belum dipotong di sisi pelanggan
+                        closePaymentProofModal();
+                        showToast('Memproses pembukuan keuangan...', 'info');
+
+                        // 1. Potong stok produk jika belum dipotong
                         if (!order.stockDeducted) {
                             await deductStockForOnlineOrder(order);
                         }
@@ -10443,18 +10483,21 @@
                             }
                         }
 
-                        // 3. Catat transaksi ke riwayat kasir
-                        await commitOnlineOrderToTransactions(orderDocId, { ...order, ...updatePayload });
+                        // 3. WAJIB gunakan await saat memanggil commitOnlineOrderToTransactions dan terima objek transaksi resmi (TRX-XXXXXX)
+                        const dataTransaksiResmi = await commitOnlineOrderToTransactions(orderDocId, { ...order, ...updatePayload });
 
-                        // 4. Cetak struk otomatis
-                        cetakStrukOnlineOtomatis(orderDocId, { ...order, ...updatePayload });
+                        // 4. Setelah objek transaksi resmi berhasil dibuat dan dikembalikan secara utuh,
+                        // barulah panggil fungsi cetakStruk(dataTransaksiResmi) untuk memicu modal preview dan pencetakan thermal
+                        if (dataTransaksiResmi) {
+                            await cetakStruk(dataTransaksiResmi);
+                        }
 
-                        closePaymentProofModal();
-                        showToast(`Pesanan #${order.orderId} BERHASIL DITERIMA & TERVERIFIKASI! Stok telah dipotong.`, 'success');
-                        logActivity('Verifikasi Pesanan', `Menerima & memverifikasi pesanan online #${order.orderId} (Rp ${order.grandTotal.toLocaleString('id-ID')}). Stok barang dipotong.`);
+                        showToast(`Pesanan #${order.orderId} BERHASIL DITERIMA & DIBUKUKAN! (Nota: ${dataTransaksiResmi ? dataTransaksiResmi.id : order.orderId})`, 'success');
+                        logActivity('Verifikasi Pesanan', `Menerima & memverifikasi pesanan online #${order.orderId}. Resmi dibukukan (${dataTransaksiResmi ? dataTransaksiResmi.id : ''}) senilai Rp ${order.grandTotal.toLocaleString('id-ID')}.`);
                         renderOnlineOrdersTable();
                         updateOnlineOrdersCounters();
                     } catch (err) {
+                        console.error("Gagal menerima pesanan online:", err);
                         showToast('Gagal memverifikasi pesanan: ' + err.message, 'error');
                     }
                 }
