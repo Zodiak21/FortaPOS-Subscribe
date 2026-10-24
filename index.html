@@ -6253,8 +6253,8 @@
             // 1. Inisialisasi hardware reset di baris paling awal buffer: ESC @ (\x1b\x40)
             commands.push(encoder.encode(ESC + '\x40'));
 
-            // 2. Paksa printer menggunakan font internal ringkas kompak khusus struk belanja (Font B): ESC M 1 (\x1b\x4d\x01)
-            commands.push(encoder.encode(ESC + '\x4d\x01'));
+            // 2. Gunakan Font A Standar Utama Kasir (ESC M 0: \x1b\x4d\x00) agar teks struk tebal, jelas, dan terbaca tajam
+            commands.push(encoder.encode(ESC + '\x4d\x00'));
 
             // Header Informasi Toko (Rata Tengah)
             commands.push(encoder.encode(ESC + '\x61\x01')); // Align center
@@ -6387,11 +6387,11 @@
             let itemsHtml = '';
             (trx.items || []).forEach(item => {
                 const itemQty = Number(item.qty) || 1;
-                const itemPrice = Number(item.sellPrice) || 0;
+                const itemPrice = Number(item.sellPrice !== undefined ? item.sellPrice : item.hargaJual) || 0;
                 const itemTotal = itemQty * itemPrice;
                 itemsHtml += `
                     <div style="margin-bottom: 3px; page-break-inside: avoid; break-inside: avoid;">
-                        <div style="font-weight: 600; font-size: ${isLarge ? '13px' : '11px'};">${escapeHtml(item.name)}</div>
+                        <div style="font-weight: 600; font-size: ${isLarge ? '13px' : '11px'};">${escapeHtml(item.name || item.nama || 'Produk')}</div>
                         <div style="display: flex; justify-content: space-between; font-size: 11px;">
                             <span>  ${itemQty} x Rp ${itemPrice.toLocaleString('id-ID')}</span>
                             <span style="font-weight: 600;">Rp ${itemTotal.toLocaleString('id-ID')}</span>
@@ -6462,10 +6462,11 @@
 
                     <div class="divider"></div>
                     <div class="flex-row"><span>Subtotal:</span><span>Rp ${(Number(trx.subtotal) || 0).toLocaleString('id-ID')}</span></div>
-                    ${trx.discount > 0 ? `<div class="flex-row"><span>Diskon:</span><span>Rp ${(Number(trx.discount) || 0).toLocaleString('id-ID')}</span></div>` : ''}
+                    ${Number(trx.ongkir) > 0 ? `<div class="flex-row"><span>Ongkir:</span><span>Rp ${(Number(trx.ongkir) || 0).toLocaleString('id-ID')}</span></div>` : ''}
+                    ${Number(trx.discount) > 0 ? `<div class="flex-row"><span>Diskon:</span><span>Rp ${(Number(trx.discount) || 0).toLocaleString('id-ID')}</span></div>` : ''}
                     <div class="divider"></div>
-                    <div class="totals-row"><span>TOTAL:</span><span>Rp ${(Number(trx.total) || 0).toLocaleString('id-ID')}</span></div>
-                    <div class="totals-row"><span>TUNAI:</span><span>Rp ${(Number(trx.cash) || 0).toLocaleString('id-ID')}</span></div>
+                    <div class="totals-row"><span>TOTAL:</span><span>Rp ${(Number(trx.total !== undefined ? trx.total : trx.grandTotal) || 0).toLocaleString('id-ID')}</span></div>
+                    <div class="totals-row"><span>TUNAI:</span><span>Rp ${(Number(trx.cash !== undefined ? trx.cash : trx.total) || 0).toLocaleString('id-ID')}</span></div>
                     <div class="totals-row"><span>KEMBALIAN:</span><span>Rp ${(Number(trx.change) || 0).toLocaleString('id-ID')}</span></div>
                     <div class="divider"></div>
                     <div class="text-center" style="font-size: 11px; margin-top: 6px;">${escapeHtml(receiptFormat.footerMessage || 'Terima Kasih Telah Berbelanja!')}</div>
@@ -6550,9 +6551,9 @@
             `;
             (trx.items || []).forEach(item => {
                 const itemQty = Number(item.qty) || 1;
-                const itemPrice = Number(item.sellPrice) || 0;
+                const itemPrice = Number(item.sellPrice !== undefined ? item.sellPrice : item.hargaJual) || 0;
                 html += `
-                    <div class="font-bold text-slate-900 pt-1">${escapeHtml(item.name)}</div>
+                    <div class="font-bold text-slate-900 pt-1">${escapeHtml(item.name || item.nama || 'Produk')}</div>
                     <div class="flex justify-between text-slate-700 pl-2">
                         <span>${itemQty} x Rp ${itemPrice.toLocaleString('id-ID')}</span>
                         <span class="font-semibold">Rp ${(itemQty * itemPrice).toLocaleString('id-ID')}</span>
@@ -6563,18 +6564,21 @@
                 <div class="border-b border-dashed border-slate-400 my-1"></div>
                 <div class="flex justify-between"><span>Subtotal:</span><span>Rp ${(Number(trx.subtotal) || 0).toLocaleString('id-ID')}</span></div>
             `;
-            if (trx.discount > 0) {
+            if (Number(trx.ongkir) > 0) {
+                html += `<div class="flex justify-between"><span>Ongkir:</span><span>Rp ${(Number(trx.ongkir) || 0).toLocaleString('id-ID')}</span></div>`;
+            }
+            if (Number(trx.discount) > 0) {
                 html += `<div class="flex justify-between"><span>Diskon:</span><span>Rp ${(Number(trx.discount) || 0).toLocaleString('id-ID')}</span></div>`;
             }
             html += `
                 <div class="border-b border-dashed border-slate-400 my-1"></div>
                 <div class="flex justify-between text-sm font-bold text-emerald-800 py-0.5">
                     <span>TOTAL:</span>
-                    <span>Rp ${(Number(trx.total) || 0).toLocaleString('id-ID')}</span>
+                    <span>Rp ${(Number(trx.total !== undefined ? trx.total : trx.grandTotal) || 0).toLocaleString('id-ID')}</span>
                 </div>
                 <div class="flex justify-between font-semibold text-slate-800">
                     <span>TUNAI:</span>
-                    <span>Rp ${(Number(trx.cash) || 0).toLocaleString('id-ID')}</span>
+                    <span>Rp ${(Number(trx.cash !== undefined ? trx.cash : trx.total) || 0).toLocaleString('id-ID')}</span>
                 </div>
                 <div class="flex justify-between font-semibold text-slate-800">
                     <span>KEMBALIAN:</span>
@@ -10247,23 +10251,44 @@
             const order = getNormalizedOrder(orderData);
             console.log(`[Auto-Print] Memproses cetak struk pesanan online #${order.orderId}...`);
 
+            // Objek transaksi pesanan online diselaraskan 100% identik dengan transaksi standar kasir
             const orderTrx = {
+                storeId: currentStoreId,
                 id: order.orderId,
                 date: order.createdAt || new Date().toISOString(),
-                items: order.items.map(i => ({
-                    name: i.nama,
-                    qty: i.qty,
-                    sellPrice: i.hargaJual,
-                    buyPrice: i.buyPrice
-                })),
-                subtotal: order.subtotal,
-                discount: 0,
-                total: order.grandTotal,
-                cash: order.grandTotal,
+                items: (order.items || []).map(i => {
+                    const price = Number(i.sellPrice !== undefined ? i.sellPrice : (i.hargaJual !== undefined ? i.hargaJual : i.price)) || 0;
+                    const bPrice = Number(i.buyPrice) || 0;
+                    const qty = Number(i.qty) || 1;
+                    const name = String(i.name || i.nama || 'Produk');
+                    return {
+                        firestoreId: i.id || i.productId || '',
+                        name: name,
+                        nama: name,
+                        sellPrice: price,
+                        hargaJual: price,
+                        buyPrice: bPrice,
+                        qty: qty,
+                        unit: i.unit || 'pcs'
+                    };
+                }),
+                subtotal: Number(order.subtotal) || 0,
+                ongkir: Number(order.ongkir) || 0,
+                discount: Number(order.discount) || 0,
+                total: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
+                cash: Number(order.grandTotal !== undefined ? order.grandTotal : order.total) || 0,
                 change: 0,
                 customer: `${order.customerName} (${order.deliveryMethod === 'antar' ? 'Antar' : 'Ambil'})`,
-                cashier: 'Kasir Online'
+                customerName: order.customerName,
+                customerPhone: order.customerPhone || order.customerWhatsapp || '',
+                deliveryMethod: order.deliveryMethod,
+                deliveryAddress: order.deliveryAddress,
+                paymentMethod: order.paymentMethod,
+                cashier: 'Kasir Online',
+                cashier_uid: 'online_order_sync'
             };
+
+            pendingTransactionForPrint = orderTrx;
 
             const isNativeConnected = (window.AndroidBridge && typeof window.AndroidBridge.isBluetoothPrinterConnected === 'function' && window.AndroidBridge.isBluetoothPrinterConnected()) || nativeBtConnected;
             const hasWebPrinter = bluetoothCharacteristic || usbDevice;
@@ -10275,7 +10300,7 @@
                     const buffer = generateEscPosBuffer(orderTrx);
                     await sendRawToPrinter(buffer);
                     printSuccess = true;
-                    showToast(`Struk Pesanan Online #${order.orderId} BERHASIL DICETAK OTOMATIS!`, 'success');
+                    showToast(`Struk Pesanan Online #${order.orderId} BERHASIL DICETAK!`, 'success');
                     logActivity('Cetak Otomatis Online', `Struk pesanan online #${order.orderId} dicetak ke printer thermal.`);
                 } catch (e) {
                     console.warn("Gagal cetak otomatis thermal:", e);
@@ -10283,7 +10308,6 @@
                 }
             } else {
                 if (isManualReprint) {
-                    pendingTransactionForPrint = orderTrx;
                     showReceiptPreviewModal(orderTrx);
                 } else {
                     showToast(`Pesanan #${order.orderId} diverifikasi. Hubungkan printer thermal untuk cetak otomatis.`, 'info');
