@@ -1106,50 +1106,59 @@
                 </div>
             </div>
 
-            <!-- 2. TOOLBAR FILTER & AKSI -->
-            <div class="bg-white p-3.5 sm:p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-                <div class="flex flex-wrap items-center gap-2 flex-grow max-w-xl">
-                    <div class="relative flex-grow min-w-[200px]">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
-                        </span>
-                        <input type="text" id="onlineOrdersSearchInput" oninput="onOnlineOrdersSearchChanged()" placeholder="Cari nama, WhatsApp, ID pesanan..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
-                        <button type="button" id="clearOnlineSearchBtn" onclick="clearOnlineOrderSearch()" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-red-500 hover:text-red-700 cursor-pointer">
-                            <i class="fa-solid fa-circle-xmark text-sm"></i>
+            <!-- 2. TOOLBAR FILTER & AKSI (RESPONSIF MOBILE & DESKTOP) -->
+            <div class="bg-white p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200 space-y-2.5">
+                <!-- Kolom Pencarian Cepat -->
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="onlineOrdersSearchInput" oninput="onOnlineOrdersSearchChanged()" placeholder="Cari nama, WhatsApp, ID pesanan..." class="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                    <button type="button" id="clearOnlineSearchBtn" onclick="clearOnlineOrderSearch()" class="hidden absolute inset-y-0 right-0 pr-2.5 flex items-center text-red-500 hover:text-red-700 cursor-pointer">
+                        <i class="fa-solid fa-circle-xmark text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Kontrol Filter & Tombol Aksi (Grid di Mobile, Flex di Desktop) -->
+                <div class="grid grid-cols-1 md:flex md:items-center md:justify-between gap-2.5">
+                    <!-- Baris Pertama / Sisi Kiri: Status Filter & + Simulasi Pesanan Muat Pas Berdampingan dalam 1 Baris -->
+                    <div class="flex items-center justify-between gap-2 w-full md:w-auto flex-nowrap">
+                        <div class="flex items-center space-x-1.5 shrink-0">
+                            <label for="onlineOrderStatusFilter" class="text-xs font-semibold text-slate-600 whitespace-nowrap flex items-center gap-1">
+                                <i class="fa-solid fa-filter text-emerald-600 text-xs"></i>
+                                <span>Status:</span>
+                            </label>
+                            <select id="onlineOrderStatusFilter" onchange="onOnlineOrderFilterChanged()" class="p-2 border border-slate-300 rounded-xl bg-slate-50 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none w-auto max-w-[130px] sm:max-w-[150px] truncate cursor-pointer">
+                                <option value="all">Semua Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="verified">Verified</option>
+                                <option value="expired">Expired</option>
+                                <option value="rejected">Ditolak</option>
+                            </select>
+                        </div>
+                        <button type="button" onclick="openSimulateOrderModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap shrink-0 flex-grow sm:flex-grow-0" title="Simulasi Pesanan Baru Masuk untuk Uji Coba Kasir">
+                            <i class="fa-solid fa-circle-plus text-xs"></i>
+                            <span>+ Simulasi Pesanan</span>
                         </button>
                     </div>
 
-                    <div class="flex items-center space-x-1.5">
-                        <label class="text-xs font-semibold text-slate-600 whitespace-nowrap"><i class="fa-solid fa-filter text-emerald-600 mr-1"></i>Status:</label>
-                        <select id="onlineOrderStatusFilter" onchange="onOnlineOrderFilterChanged()" class="p-2 border border-slate-300 rounded-xl bg-slate-50 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none">
-                            <option value="all">Semua Status</option>
-                            <option value="pending">Menunggu Verifikasi (Pending)</option>
-                            <option value="verified">Terverifikasi (Verified)</option>
-                            <option value="expired">Expired (Kedaluwarsa)</option>
-                            <option value="rejected">Ditolak / Batal</option>
-                        </select>
+                    <!-- Baris Kedua / Di Bawahnya: Tombol Segarkan & Tombol Salin Link Toko -->
+                    <div class="flex items-center gap-2 w-full md:w-auto flex-nowrap">
+                        <!-- Tombol Hapus Pesanan Terpilih (Spesifikasi 5) -->
+                        <button type="button" id="deleteSelectedOnlineOrdersBtn" onclick="deleteSelectedOnlineOrders()" class="hidden bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-xs whitespace-nowrap shrink-0" title="Hapus Pesanan Terpilih">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                            <span id="deleteSelectedOnlineOrdersText">Hapus Terpilih</span>
+                        </button>
+                        <button type="button" onclick="refreshOnlineOrdersFromCloud()" class="flex-1 md:flex-none bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1.5 transition cursor-pointer shadow-2xs whitespace-nowrap" title="Segarkan Data Real-Time Firestore">
+                            <i class="fa-solid fa-rotate-right text-xs"></i>
+                            <span>Segarkan</span>
+                        </button>
+                        <!-- SPESIFIKASI 2: TOMBOL SALIN LINK TOKO -->
+                        <button type="button" onclick="copyStoreOnlineUrl()" class="flex-1 md:flex-none bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap" title="Salin Link Toko untuk Pelanggan Online">
+                            <i class="fa-solid fa-copy text-xs"></i>
+                            <span>Salin Link Toko</span>
+                        </button>
                     </div>
-                </div>
-
-                <div class="flex items-center gap-2 shrink-0">
-                    <!-- Tombol Hapus Pesanan Terpilih (Spesifikasi 5) -->
-                    <button type="button" id="deleteSelectedOnlineOrdersBtn" onclick="deleteSelectedOnlineOrders()" class="hidden bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer shadow-xs whitespace-nowrap" title="Hapus Pesanan Terpilih">
-                        <i class="fa-solid fa-trash-can text-xs"></i>
-                        <span id="deleteSelectedOnlineOrdersText">Hapus Pesanan Terpilih</span>
-                    </button>
-                    <button type="button" onclick="refreshOnlineOrdersFromCloud()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shadow-2xs whitespace-nowrap" title="Segarkan Data Real-Time Firestore">
-                        <i class="fa-solid fa-rotate-right text-xs"></i>
-                        <span class="hidden sm:inline">Segarkan</span>
-                    </button>
-                    <button type="button" onclick="openSimulateOrderModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap" title="Simulasi Pesanan Baru Masuk untuk Uji Coba Kasir">
-                        <i class="fa-solid fa-circle-plus text-xs"></i>
-                        <span>+ Simulasi Pesanan</span>
-                    </button>
-                    <!-- SPESIFIKASI 2: TOMBOL LINK DINAMIS "URL.Online-Customers" -->
-                    <button type="button" onclick="openOnlineCustomersUrl()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap" title="Buka Halaman URL.Online-Customers">
-                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
-                        <span>URL.Online-Customers</span>
-                    </button>
                 </div>
             </div>
 
@@ -2696,7 +2705,26 @@
         </div>
     </div>
 
-    
+    <!-- MODAL POP-UP: Salin Link Toko Pelanggan Online -->
+    <div id="copyStoreUrlModal" class="fixed inset-0 bg-slate-900/70 z-[220] flex items-center justify-center hidden p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 text-center border border-slate-200">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-2xl shadow-xs">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-800">Tautan Toko Berhasil Disalin!</h3>
+                <p class="text-xs text-slate-600 mt-2 leading-relaxed break-all font-mono bg-slate-50 p-3 rounded-xl border border-slate-200 select-all" id="copiedStoreUrlText">
+                    link untuk pelanggan online https://zodiak21.github.io/FortaPOS-Online-CUSTOMERS/?storeId=HJN-xxxxxx
+                </p>
+            </div>
+            <div class="pt-1">
+                <button type="button" onclick="closeCopyStoreUrlModal()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition cursor-pointer shadow-xs">
+                    OK, Siap Bagikan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: Lihat Bukti Transfer Bank Pembayaran Online -->
     <div id="paymentProofModal" class="fixed inset-0 bg-slate-900/80 z-[160] flex items-center justify-center hidden p-3 sm:p-4 backdrop-blur-xs">
         <div class="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-3.5 max-h-[94vh] flex flex-col border border-slate-200">
@@ -10791,10 +10819,61 @@
             return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} WIB`;
         }
 
-        function openOnlineCustomersUrl() {
+        function copyStoreOnlineUrl() {
             const storeCode = currentStoreId || (currentUser ? currentUser.storeId : '') || 'HJN-000000';
-            const targetUrl = `https://github.io${storeCode}`;
-            window.open(targetUrl, '_blank');
+            const linkText = `https://zodiak21.github.io/FortaPOS-Online-CUSTOMERS/?storeId=${storeCode}`;
+            const alertMessage = `link untuk pelanggan online ${linkText}`;
+
+            const handleSuccess = () => {
+                playBeep('success');
+                triggerHapticFeedback(60);
+                showToast(alertMessage, 'success');
+                const modal = document.getElementById('copyStoreUrlModal');
+                const textEl = document.getElementById('copiedStoreUrlText');
+                if (textEl) textEl.innerText = alertMessage;
+                if (modal) modal.classList.remove('hidden');
+                logActivity('Salin Link Toko', `Menyalin tautan toko online pelanggan: ${linkText}`);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(linkText).then(() => {
+                    handleSuccess();
+                }).catch(err => {
+                    console.warn("Clipboard API writeText gagal, gunakan fallback:", err);
+                    fallbackCopyText(linkText);
+                    handleSuccess();
+                });
+            } else {
+                fallbackCopyText(linkText);
+                handleSuccess();
+            }
+        }
+
+        function fallbackCopyText(text) {
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            } catch (e) {
+                console.warn("Fallback copy failed:", e);
+            }
+        }
+
+        function closeCopyStoreUrlModal() {
+            const modal = document.getElementById('copyStoreUrlModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function openOnlineCustomersUrl() {
+            copyStoreOnlineUrl();
         }
 
         // ==============================================================
@@ -11042,33 +11121,38 @@
                             ${statusBadge}
                         </td>
 
-                        <!-- AKSI KASIR (Horizontal single-row flex flex-row nowrap gap-1.5 items-center justify-center) -->
-                        <td class="p-3 text-center align-middle">
-                            <div class="flex flex-row nowrap gap-1.5 items-center justify-center whitespace-nowrap">
-                                <button type="button" onclick="viewPaymentProof('${docId}')" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Lihat Bukti Transfer & Detail Pesanan">
-                                    <i class="fa-solid fa-receipt text-[11px]"></i>
-                                    <span>Bukti & Detail</span>
+                        <!-- AKSI KASIR (Susunan Vertikal Atas-Bawah Responsif) -->
+                        <td class="p-2 sm:p-2.5 text-center align-middle w-32 min-w-[125px]">
+                            <div class="flex flex-col gap-1.5 w-full items-stretch">
+                                <!-- Tombol Bukti & Detail (Wajib posisi ATAS) -->
+                                <button type="button" onclick="viewPaymentProof('${docId}')" class="w-full py-1.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" title="Lihat Bukti Transfer & Detail Pesanan">
+                                    <i class="fa-solid fa-receipt text-[10px] shrink-0"></i>
+                                    <span class="whitespace-nowrap">Bukti & Detail</span>
                                 </button>
 
                                 ${order.status === 'Pending' ? `
-                                    <button type="button" onclick="acceptOnlineOrderPayment('${docId}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap" title="Terima & Verifikasi (Potong Stok Otomatis)">
-                                        <i class="fa-solid fa-check text-[11px]"></i>
-                                        <span>Terima</span>
-                                    </button>
-                                    <button type="button" onclick="rejectOnlineOrder('${docId}')" class="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap" title="Tolak / Batalkan">
-                                        <i class="fa-solid fa-ban text-[11px]"></i>
-                                        <span>Tolak</span>
-                                    </button>
+                                    <div class="grid grid-cols-2 gap-1 w-full">
+                                        <button type="button" onclick="acceptOnlineOrderPayment('${docId}')" class="w-full py-1 px-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[10px] sm:text-[11px] font-bold transition flex items-center justify-center gap-0.5 cursor-pointer shadow-xs whitespace-nowrap" title="Terima & Verifikasi (Potong Stok Otomatis)">
+                                            <i class="fa-solid fa-check text-[9px]"></i>
+                                            <span class="whitespace-nowrap">Terima</span>
+                                        </button>
+                                        <button type="button" onclick="rejectOnlineOrder('${docId}')" class="w-full py-1 px-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-[10px] sm:text-[11px] font-bold transition flex items-center justify-center gap-0.5 cursor-pointer whitespace-nowrap" title="Tolak / Batalkan">
+                                            <i class="fa-solid fa-ban text-[9px]"></i>
+                                            <span class="whitespace-nowrap">Tolak</span>
+                                        </button>
+                                    </div>
                                 ` : ''}
 
-                                <button type="button" onclick="reprintOnlineOrderReceipt('${docId}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Cetak Struk Thermal ESC/POS">
-                                    <i class="fa-solid fa-print text-[11px]"></i>
-                                    <span>Cetak Struk</span>
-                                </button>
-
-                                <button type="button" onclick="deleteSingleOnlineOrder('${docId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shrink-0" title="Hapus Pesanan Ini">
-                                    <i class="fa-solid fa-trash text-xs"></i>
-                                </button>
+                                <!-- Tombol Cetak Struk (Wajib posisi BAWAH) & Ikon Tempat Sampah Merah -->
+                                <div class="flex items-center gap-1 w-full">
+                                    <button type="button" onclick="reprintOnlineOrderReceipt('${docId}')" class="flex-grow py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-[11px] sm:text-xs font-semibold transition flex items-center justify-center gap-1 cursor-pointer shadow-2xs whitespace-nowrap" title="Cetak Struk Thermal ESC/POS">
+                                        <i class="fa-solid fa-print text-[10px] shrink-0"></i>
+                                        <span class="whitespace-nowrap">Cetak Struk</span>
+                                    </button>
+                                    <button type="button" onclick="deleteSingleOnlineOrder('${docId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shrink-0" title="Hapus Pesanan Ini">
+                                        <i class="fa-solid fa-trash text-[11px]"></i>
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -11262,6 +11346,9 @@
         window.deleteSelectedOnlineOrders = deleteSelectedOnlineOrders;
         window.deleteSingleOnlineOrder = deleteSingleOnlineOrder;
         window.formatDateTimeWIB = formatDateTimeWIB;
+        window.copyStoreOnlineUrl = copyStoreOnlineUrl;
+        window.closeCopyStoreUrlModal = closeCopyStoreUrlModal;
+        window.fallbackCopyText = fallbackCopyText;
 
     </script>
 </body>
