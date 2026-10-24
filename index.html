@@ -8143,7 +8143,10 @@
                     daysMap[key] = 0;
                 }
                 transactionsForChart.forEach(trx => {
-                    const key = new Date(trx.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+                    if (!trx || !trx.date) return;
+                    const d = new Date(trx.date);
+                    if (isNaN(d.getTime())) return;
+                    const key = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
                     if (daysMap[key] !== undefined) {
                         daysMap[key] += Number(trx.total) || 0;
                     }
@@ -8153,7 +8156,10 @@
             } else if (chartMode === 'mingguan') {
                 const weeksMap = { 'Minggu 1': 0, 'Minggu 2': 0, 'Minggu 3': 0, 'Minggu 4': 0 };
                 transactionsForChart.forEach(trx => {
-                    const day = new Date(trx.date).getDate();
+                    if (!trx || !trx.date) return;
+                    const d = new Date(trx.date);
+                    if (isNaN(d.getTime())) return;
+                    const day = d.getDate();
                     if (day <= 7) weeksMap['Minggu 1'] += Number(trx.total) || 0;
                     else if (day <= 14) weeksMap['Minggu 2'] += Number(trx.total) || 0;
                     else if (day <= 21) weeksMap['Minggu 3'] += Number(trx.total) || 0;
@@ -8166,8 +8172,13 @@
                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
                 months.forEach(m => monthsMap[m] = 0);
                 transactionsForChart.forEach(trx => {
-                    const m = months[new Date(trx.date).getMonth()];
-                    monthsMap[m] += Number(trx.total) || 0;
+                    if (!trx || !trx.date) return;
+                    const d = new Date(trx.date);
+                    if (isNaN(d.getTime())) return;
+                    const m = months[d.getMonth()];
+                    if (monthsMap[m] !== undefined) {
+                        monthsMap[m] += Number(trx.total) || 0;
+                    }
                 });
                 labels = Object.keys(monthsMap);
                 dataValues = Object.values(monthsMap);
@@ -8295,8 +8306,24 @@
                 let trxGrossProfit = 0;
                 if (t.items && Array.isArray(t.items)) {
                     t.items.forEach(item => {
-                        const sellPrice = Number(item.sellPrice) || 0;
-                        const buyPrice = (item.buyPrice !== undefined && item.buyPrice !== null) ? Number(item.buyPrice) : 0;
+                        const sellPrice = Number(item.sellPrice !== undefined ? item.sellPrice : (item.hargaJual !== undefined ? item.hargaJual : item.price)) || 0;
+                        let buyPrice = (item.buyPrice !== undefined && item.buyPrice !== null) ? Number(item.buyPrice) : 0;
+
+                        // Perbaikan Bug Laba: Jika buyPrice 0/kosong pada pesanan online lama, ambil HPP dari master produk lokal (dbProducts)
+                        if (buyPrice === 0 && Array.isArray(dbProducts) && dbProducts.length > 0) {
+                            const itemId = item.firestoreId || item.id || item.productId || '';
+                            const itemBarcode = item.barcode || '';
+                            const itemName = String(item.name || item.nama || '').trim().toLowerCase();
+                            const prod = dbProducts.find(p => 
+                                (itemId && (p.firestoreId === itemId || p.id === itemId)) ||
+                                (itemBarcode && p.barcode === itemBarcode) ||
+                                (itemName && p.name && p.name.trim().toLowerCase() === itemName)
+                            );
+                            if (prod && prod.buyPrice) {
+                                buyPrice = Number(prod.buyPrice) || 0;
+                            }
+                        }
+
                         const qty = Number(item.qty) || 1;
                         trxGrossProfit += (sellPrice - buyPrice) * qty;
                     });
@@ -9878,12 +9905,9 @@
                                     showToast(`Pesanan Online Baru #${normalized.orderId} dari ${normalized.customerName}!`, 'info');
                                 }
 
-                                // Sinkronisasi transaksi jika status "Verified" dari device lain yang belum dicatat ke kasir lokal
-                                if ((change.type === 'added' || change.type === 'modified') && normalized.status === 'Verified') {
-                                    if (!docData.isCommittedToTransactions) {
-                                        commitOnlineOrderToTransactions(docId, normalized);
-                                    }
-                                }
+                                // PERBAIKAN BUG DUPLIKASI: Pembukuan transaksi ke kasir HANYA dilakukan SATU KALI secara eksplisit
+                                // melalui tombol klik manual "Terima & Verifikasi" di dalam fungsi acceptOnlineOrderPayment(orderDocId).
+                                // Listener real-time tidak melakukan commit otomatis agar tidak tercipta 2 riwayat transaksi ganda.
 
                                 // Auto-Rollback stok jika pesanan berstatus "expired" atau "cancelled"
                                 if ((change.type === 'added' || change.type === 'modified') && (normalized.status === 'expired' || normalized.status === 'cancelled')) {
@@ -10331,12 +10355,17 @@
             console.log(`[Committing Transaksi] Mencatat pesanan #${order.orderId} ke koleksi transaksi kasir...`);
 
             try {
-                // Periksa jika sudah pernah dibukukan sebelumnya
+                // Periksa jika sudah pernah dibukukan sebelumnya agar tidak terjadi duplikasi riwayat transaksi
                 if (orderData.isCommittedToTransactions && orderData.transactionId) {
                     const existing = dbTransactions.find(t => t.id === orderData.transactionId || t.onlineOrderId === orderId);
                     if (existing) {
                         return existing;
                     }
+                }
+                const alreadyCommitted = dbTransactions.find(t => t.onlineOrderId === orderId || (order.orderId && t.orderId === order.orderId && t.isOnlineOrder));
+                if (alreadyCommitted) {
+                    console.log(`[Committing Transaksi] Pesanan #${order.orderId} sudah pernah dibukukan sebelumnya:`, alreadyCommitted.id);
+                    return alreadyCommitted;
                 }
 
                 // Generate ID Transaksi resmi standar kasir (TRX-XXXXXX)
@@ -10344,27 +10373,42 @@
                     ? order.orderId
                     : ('TRX-' + Date.now().toString().slice(-6));
 
+                // Pastikan format tanggal ISO String standar yang bersih untuk grafik dan laporan
+                const cleanDate = new Date().toISOString();
+
                 const newTrx = {
                     storeId: currentStoreId,
                     id: officialTransactionId,
                     orderId: order.orderId || officialTransactionId,
                     onlineOrderId: orderId,
-                    date: order.createdAt || new Date().toISOString(),
+                    date: cleanDate,
                     items: (order.items || []).map(it => {
-                        const sPrice = Number(it.sellPrice !== undefined ? it.sellPrice : (it.hargaJual !== undefined ? it.hargaJual : it.price)) || 0;
-                        const bPrice = Number(it.buyPrice) || 0;
+                        const targetId = it.id || it.productId || '';
+                        const targetBarcode = it.barcode || '';
+                        const targetName = String(it.name || it.nama || '').trim().toLowerCase();
+
+                        // Cari harga beli (HPP) yang akurat dari master produk lokal (dbProducts) berdasarkan id, barcode, atau nama
+                        const prodFromMaster = (dbProducts || []).find(p => 
+                            (targetId && (p.firestoreId === targetId || p.id === targetId)) ||
+                            (targetBarcode && p.barcode === targetBarcode) ||
+                            (targetName && p.name && p.name.trim().toLowerCase() === targetName)
+                        );
+
+                        const sPrice = Number(it.sellPrice !== undefined ? it.sellPrice : (it.hargaJual !== undefined ? it.hargaJual : it.price)) || (prodFromMaster ? Number(prodFromMaster.sellPrice) : 0);
+                        const bPrice = prodFromMaster ? Number(prodFromMaster.buyPrice) : (Number(it.buyPrice) || 0);
                         const qty = Number(it.qty) || 1;
-                        const name = String(it.name || it.nama || 'Produk');
+                        const name = String(it.name || it.nama || (prodFromMaster ? prodFromMaster.name : 'Produk'));
+
                         return {
-                            id: it.id || it.productId || '',
-                            firestoreId: it.id || it.productId || '',
+                            id: targetId || (prodFromMaster ? prodFromMaster.firestoreId : ''),
+                            firestoreId: targetId || (prodFromMaster ? prodFromMaster.firestoreId : ''),
                             name: name,
                             nama: name,
                             qty: qty,
                             sellPrice: sPrice,
                             hargaJual: sPrice,
                             buyPrice: bPrice,
-                            unit: it.unit || 'pcs'
+                            unit: it.unit || (prodFromMaster ? prodFromMaster.unit : 'pcs')
                         };
                     }),
                     subtotal: Number(order.subtotal) || 0,
@@ -10391,7 +10435,7 @@
 
                     await db.collection("stores").doc(currentStoreId).collection("online_orders").doc(orderId).update({
                         isCommittedToTransactions: true,
-                        committedAt: new Date().toISOString(),
+                        committedAt: cleanDate,
                         transactionId: newTrx.id,
                         transactionDocId: docRef.id
                     });
@@ -10417,16 +10461,27 @@
             } catch (err) {
                 console.error("Gagal committing transaksi online ke riwayat kasir:", err);
                 const fallbackId = 'TRX-' + Date.now().toString().slice(-6);
+                const cleanDate = new Date().toISOString();
                 return {
                     storeId: currentStoreId,
                     id: fallbackId,
-                    date: new Date().toISOString(),
-                    items: (order.items || []).map(it => ({
-                        name: it.name || it.nama || 'Produk',
-                        sellPrice: Number(it.sellPrice !== undefined ? it.sellPrice : it.hargaJual) || 0,
-                        qty: Number(it.qty) || 1,
-                        buyPrice: Number(it.buyPrice) || 0
-                    })),
+                    date: cleanDate,
+                    items: (order.items || []).map(it => {
+                        const targetId = it.id || it.productId || '';
+                        const targetBarcode = it.barcode || '';
+                        const targetName = String(it.name || it.nama || '').trim().toLowerCase();
+                        const prodFromMaster = (dbProducts || []).find(p => 
+                            (targetId && (p.firestoreId === targetId || p.id === targetId)) ||
+                            (targetBarcode && p.barcode === targetBarcode) ||
+                            (targetName && p.name && p.name.trim().toLowerCase() === targetName)
+                        );
+                        return {
+                            name: it.name || it.nama || (prodFromMaster ? prodFromMaster.name : 'Produk'),
+                            sellPrice: Number(it.sellPrice !== undefined ? it.sellPrice : it.hargaJual) || 0,
+                            qty: Number(it.qty) || 1,
+                            buyPrice: prodFromMaster ? Number(prodFromMaster.buyPrice) : (Number(it.buyPrice) || 0)
+                        };
+                    }),
                     subtotal: Number(order.subtotal) || 0,
                     ongkir: Number(order.ongkir) || 0,
                     discount: 0,
@@ -10496,6 +10551,8 @@
                         logActivity('Verifikasi Pesanan', `Menerima & memverifikasi pesanan online #${order.orderId}. Resmi dibukukan (${dataTransaksiResmi ? dataTransaksiResmi.id : ''}) senilai Rp ${order.grandTotal.toLocaleString('id-ID')}.`);
                         renderOnlineOrdersTable();
                         updateOnlineOrdersCounters();
+                        renderHistory();
+                        updateChart();
                     } catch (err) {
                         console.error("Gagal menerima pesanan online:", err);
                         showToast('Gagal memverifikasi pesanan: ' + err.message, 'error');
