@@ -1132,13 +1132,23 @@
                 </div>
 
                 <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="refreshOnlineOrdersFromCloud()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shadow-2xs" title="Segarkan Data Real-Time Firestore">
+                    <!-- Tombol Hapus Pesanan Terpilih (Spesifikasi 5) -->
+                    <button type="button" id="deleteSelectedOnlineOrdersBtn" onclick="deleteSelectedOnlineOrders()" class="hidden bg-rose-600 hover:bg-rose-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition cursor-pointer shadow-xs whitespace-nowrap" title="Hapus Pesanan Terpilih">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                        <span id="deleteSelectedOnlineOrdersText">Hapus Pesanan Terpilih</span>
+                    </button>
+                    <button type="button" onclick="refreshOnlineOrdersFromCloud()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition cursor-pointer shadow-2xs whitespace-nowrap" title="Segarkan Data Real-Time Firestore">
                         <i class="fa-solid fa-rotate-right text-xs"></i>
                         <span class="hidden sm:inline">Segarkan</span>
                     </button>
-                    <button type="button" onclick="openSimulateOrderModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer" title="Simulasi Pesanan Baru Masuk untuk Uji Coba Kasir">
+                    <button type="button" onclick="openSimulateOrderModal()" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap" title="Simulasi Pesanan Baru Masuk untuk Uji Coba Kasir">
                         <i class="fa-solid fa-circle-plus text-xs"></i>
                         <span>+ Simulasi Pesanan</span>
+                    </button>
+                    <!-- SPESIFIKASI 2: TOMBOL LINK DINAMIS "URL.Online-Customers" -->
+                    <button type="button" onclick="openOnlineCustomersUrl()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm transition cursor-pointer whitespace-nowrap" title="Buka Halaman URL.Online-Customers">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                        <span>URL.Online-Customers</span>
                     </button>
                 </div>
             </div>
@@ -1146,14 +1156,15 @@
             <!-- 3. TABEL TRANSAKSI ONLINE REAL-TIME -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="p-3.5 bg-slate-50/90 border-b border-slate-200 flex flex-wrap justify-between items-center gap-2">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+                    <!-- SPESIFIKASI 1: HEADER & BADGE 1 BARIS UTUH TANPA LINE BREAK -->
+                    <div class="flex flex-row nowrap items-center space-x-2 whitespace-nowrap shrink-0">
+                        <span class="font-bold text-slate-800 text-sm flex items-center space-x-2 whitespace-nowrap">
                             <i class="fa-solid fa-globe text-emerald-600"></i>
                             <span>Daftar Pesanan Online Pelanggan</span>
                         </span>
-                        <span id="onlineTableTotalCountBadge" class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">0 Pesanan</span>
+                        <span id="onlineTableTotalCountBadge" class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">0 Pesanan</span>
                     </div>
-                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5">
+                    <div class="text-[11px] text-slate-500 flex items-center gap-1.5 whitespace-nowrap">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                         <span>Listener Firestore Aktif (Collection: <strong class="font-mono text-emerald-700">online_orders</strong>)</span>
                     </div>
@@ -1163,17 +1174,20 @@
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
                             <tr class="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs uppercase tracking-wider font-semibold">
-                                <th class="p-3">Waktu & ID Order</th>
-                                <th class="p-3">Info Pelanggan</th>
-                                <th class="p-3">Metode Pengiriman</th>
-                                <th class="p-3 text-right">Total Belanja</th>
-                                <th class="p-3 text-center">Status Pesanan</th>
-                                <th class="p-3 text-center">Aksi Kasir</th>
+                                <!-- SPESIFIKASI 5: CHECKBOX SELECT ALL DI HEADER -->
+                                <th class="p-3 text-center w-10">
+                                    <input type="checkbox" id="selectAllOnlineOrders" onchange="toggleSelectAllOnlineOrders(this)" class="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer">
+                                </th>
+                                <!-- SPESIFIKASI 3: KONSOLIDASI INFO PELANGGAN -->
+                                <th class="p-3">INFO PELANGGAN</th>
+                                <th class="p-3 text-right">TOTAL BELANJA</th>
+                                <th class="p-3 text-center">STATUS PESANAN</th>
+                                <th class="p-3 text-center">AKSI KASIR</th>
                             </tr>
                         </thead>
                         <tbody id="onlineOrdersTableBody" class="divide-y divide-slate-100 text-xs">
                             <tr>
-                                <td colspan="6" class="text-center py-10 text-slate-400">
+                                <td colspan="5" class="text-center py-10 text-slate-400">
                                     <i class="fa-solid fa-spinner fa-spin text-2xl mb-2 text-emerald-600 block"></i>
                                     <span>Menghubungkan ke Cloud Firestore...</span>
                                 </td>
@@ -9930,8 +9944,18 @@
                                 }
                             });
 
-                            // Urutkan dari pesanan terbaru
-                            orders.sort((a, b) => new Date(b.createdAt || b.date || 0) - new Date(a.createdAt || a.date || 0));
+                            // Urutkan secara ketat dari pesanan online terbaru paling atas
+                            orders.sort((a, b) => {
+                                const getTime = (o) => {
+                                    if (!o) return 0;
+                                    const val = o.createdAt || o.date || o.timestamp;
+                                    if (!val) return 0;
+                                    if (typeof val.toDate === 'function') return val.toDate().getTime();
+                                    const t = new Date(val).getTime();
+                                    return isNaN(t) ? 0 : t;
+                                };
+                                return getTime(b) - getTime(a);
+                            });
                             onlineOrdersList = orders;
 
                             updateOnlineOrdersBadge(pendingCount);
@@ -10747,6 +10771,128 @@
         }
 
         // ==============================================================
+        // HELPER DATE/TIME WIB & LINK URL.ONLINE-CUSTOMERS
+        // ==============================================================
+        function formatDateTimeWIB(dateVal) {
+            if (!dateVal) return '-';
+            let d = null;
+            if (dateVal && typeof dateVal.toDate === 'function') {
+                d = dateVal.toDate();
+            } else {
+                d = new Date(dateVal);
+            }
+            if (isNaN(d.getTime())) return String(dateVal);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+            return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} WIB`;
+        }
+
+        function openOnlineCustomersUrl() {
+            const storeCode = currentStoreId || (currentUser ? currentUser.storeId : '') || 'HJN-000000';
+            const targetUrl = `https://github.io${storeCode}`;
+            window.open(targetUrl, '_blank');
+        }
+
+        // ==============================================================
+        // FITUR CHECKBOX PENGHAPUSAN MASSAL & INDIVIDUAL ONLINE ORDERS
+        // ==============================================================
+        function toggleSelectAllOnlineOrders(master) {
+            document.querySelectorAll('.online-order-checkbox').forEach(cb => cb.checked = master.checked);
+            checkOnlineOrdersSelection();
+        }
+
+        function checkOnlineOrdersSelection() {
+            const checked = document.querySelectorAll('.online-order-checkbox:checked');
+            const btn = document.getElementById('deleteSelectedOnlineOrdersBtn');
+            const txt = document.getElementById('deleteSelectedOnlineOrdersText');
+            if (checked.length > 0) {
+                if (btn) btn.classList.remove('hidden');
+                if (txt) txt.innerText = `Hapus Pesanan Terpilih (${checked.length})`;
+            } else {
+                if (btn) btn.classList.add('hidden');
+                const master = document.getElementById('selectAllOnlineOrders');
+                if (master) master.checked = false;
+            }
+        }
+
+        async function deleteSelectedOnlineOrders() {
+            const checked = document.querySelectorAll('.online-order-checkbox:checked');
+            if (checked.length === 0) return;
+
+            showCustomConfirm(
+                'Hapus Pesanan Terpilih',
+                `Apakah Anda yakin ingin menghapus ${checked.length} pesanan online terpilih secara permanen dari database Firestore?`,
+                async () => {
+                    try {
+                        showToast(`Menghapus ${checked.length} pesanan online...`, 'info');
+                        const docIds = Array.from(checked).map(cb => cb.value);
+
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                            const batch = db.batch();
+                            docIds.forEach(id => {
+                                const ref = db.collection('stores').doc(currentStoreId).collection('online_orders').doc(id);
+                                batch.delete(ref);
+                            });
+                            await batch.commit();
+                        }
+
+                        onlineOrdersList = onlineOrdersList.filter(o => {
+                            const oId = o.firestoreId || o.docId || o.id;
+                            return !docIds.includes(oId);
+                        });
+                        saveLocalOnlineOrders();
+
+                        const btn = document.getElementById('deleteSelectedOnlineOrdersBtn');
+                        if (btn) btn.classList.add('hidden');
+                        const master = document.getElementById('selectAllOnlineOrders');
+                        if (master) master.checked = false;
+
+                        showToast(`${docIds.length} pesanan online berhasil dihapus!`, 'success');
+                        logActivity('Hapus Pesanan Online', `Menghapus massal ${docIds.length} pesanan online terpilih.`);
+                        renderOnlineOrdersTable();
+                        updateOnlineOrdersCounters();
+                    } catch (err) {
+                        console.error("Gagal menghapus pesanan terpilih:", err);
+                        showToast('Gagal menghapus pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        async function deleteSingleOnlineOrder(orderDocId) {
+            const raw = onlineOrdersList.find(o => o.firestoreId === orderDocId || o.id === orderDocId || o.orderId === orderDocId);
+            const orderNum = raw ? (raw.orderId || orderDocId) : orderDocId;
+
+            showCustomConfirm(
+                'Hapus Pesanan Online',
+                `Apakah Anda yakin ingin menghapus data pesanan online #${orderNum} secara permanen dari database Firestore?`,
+                async () => {
+                    try {
+                        if (isFirebaseConfigured && db && (!currentUser || !currentUser.isDemo) && currentStoreId) {
+                            await db.collection('stores').doc(currentStoreId).collection('online_orders').doc(orderDocId).delete();
+                        }
+
+                        onlineOrdersList = onlineOrdersList.filter(o => o.firestoreId !== orderDocId && o.id !== orderDocId && o.orderId !== orderDocId);
+                        saveLocalOnlineOrders();
+
+                        checkOnlineOrdersSelection();
+                        showToast(`Pesanan #${orderNum} berhasil dihapus dari database!`, 'success');
+                        logActivity('Hapus Pesanan Online', `Menghapus data pesanan online #${orderNum}.`);
+                        renderOnlineOrdersTable();
+                        updateOnlineOrdersCounters();
+                    } catch (err) {
+                        console.error("Gagal menghapus pesanan online:", err);
+                        showToast('Gagal menghapus pesanan: ' + err.message, 'error');
+                    }
+                }
+            );
+        }
+
+        // ==============================================================
         // RENDER TABEL PESANAN ONLINE (TAB-PELANGGAN-ONLINE)
         // ==============================================================
         function renderOnlineOrdersTable() {
@@ -10800,7 +10946,7 @@
             if (paged.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-center py-12 text-slate-400">
+                        <td colspan="5" class="text-center py-12 text-slate-400">
                             <i class="fa-solid fa-basket-shopping text-3xl mb-2 text-slate-300 block"></i>
                             <p class="font-semibold text-slate-600">Belum ada pesanan online yang sesuai.</p>
                             <p class="text-[11px] text-slate-400 mt-0.5">Tekan "+ Simulasi Pesanan" untuk menguji alur kasir online.</p>
@@ -10813,8 +10959,6 @@
             tbody.innerHTML = paged.map(order => {
                 const docId = order.firestoreId || order.docId || order.id || order.orderId;
                 const orderNum = order.orderId;
-                const dateStr = order.createdAt ? new Date(order.createdAt).toLocaleString('id-ID') : '-';
-
                 const rawPhone = order.customerPhone || order.customerWhatsapp || '';
                 const cleanPhone = sanitizeWhatsappNumber(rawPhone);
                 const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=Halo%20${encodeURIComponent(order.customerName)},%20terkait%20pesanan%20Anda%20#${encodeURIComponent(orderNum)}%20di%20${encodeURIComponent(dbSettings.storeName || 'Toko')}:` : '#';
@@ -10835,70 +10979,96 @@
 
                 // Delivery badge
                 const deliveryBadge = order.deliveryMethod === 'antar'
-                    ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-motorcycle text-[10px]"></i><span>antar</span></span>`
-                    : `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-store text-[10px]"></i><span>ambil</span></span>`;
+                    ? `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-motorcycle text-[10px]"></i><span>Antar</span></span>`
+                    : `<span class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-store text-[10px]"></i><span>Ambil</span></span>`;
 
                 // Payment badge
                 const paymentBadge = order.paymentMethod === 'transfer'
-                    ? `<span class="text-indigo-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-building-columns text-[10px] mr-1"></i>transfer</span>`
-                    : `<span class="text-emerald-700 font-semibold block text-[11px] mt-0.5"><i class="fa-solid fa-money-bill-wave text-[10px] mr-1"></i>cash</span>`;
-
-                // Items summary string
-                const itemsSummary = (order.items || []).map(i => `${i.qty}x ${i.nama}`).join(', ');
+                    ? `<span class="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-building-columns text-[10px]"></i><span>Transfer</span></span>`
+                    : `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold inline-flex items-center gap-1"><i class="fa-solid fa-money-bill-wave text-[10px]"></i><span>Cash</span></span>`;
 
                 return `
                     <tr class="hover:bg-slate-50/80 transition">
-                        <td class="p-3">
-                            <div class="font-mono font-bold text-slate-900">${escapeHtml(orderNum)}</div>
-                            <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(dateStr)}</div>
-                            ${order.isPrinted ? `<span class="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-flex items-center gap-1 mt-1"><i class="fa-solid fa-print text-[8px]"></i>Tercetak</span>` : ''}
+                        <!-- Checkbox individual -->
+                        <td class="p-3 text-center align-middle">
+                            <input type="checkbox" value="${docId}" onchange="checkOnlineOrdersSelection()" class="online-order-checkbox rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer">
                         </td>
-                        <td class="p-3">
-                            <div class="font-bold text-slate-800 text-xs">${escapeHtml(order.customerName)}</div>
-                            ${rawPhone ? `
-                                <a href="${waUrl}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-mono text-[11px] font-semibold inline-flex items-center gap-1 mt-0.5 hover:underline" title="Chat WhatsApp Pelanggan">
-                                    <i class="fa-brands fa-whatsapp text-emerald-500"></i>
-                                    <span>${escapeHtml(rawPhone)}</span>
-                                </a>
-                            ` : '<span class="text-slate-400 text-[11px]">Tanpa WhatsApp</span>'}
-                            ${order.deliveryAddress && order.deliveryAddress !== '-' ? `<div class="text-[10px] text-slate-500 truncate max-w-[170px] mt-0.5" title="${escapeHtml(order.deliveryAddress)}"><i class="fa-solid fa-location-dot text-[9px] mr-0.5 text-slate-400"></i>${escapeHtml(order.deliveryAddress)}</div>` : ''}
+
+                        <!-- INFO PELANGGAN: Struktur vertikal terpadu (a-f) -->
+                        <td class="p-3 align-top">
+                            <div class="flex flex-col space-y-1 text-xs">
+                                <!-- a. Nama Lengkap Pelanggan (paling atas, teks tebal) -->
+                                <div class="font-bold text-slate-900 text-sm leading-tight">${escapeHtml(order.customerName)}</div>
+
+                                <!-- b. Nomor WhatsApp (link klik chat langsung) -->
+                                <div>
+                                    ${rawPhone ? `
+                                        <a href="${waUrl}" target="_blank" class="text-emerald-600 hover:text-emerald-700 font-mono text-xs font-semibold inline-flex items-center gap-1 hover:underline" title="Chat WhatsApp Pelanggan">
+                                            <i class="fa-brands fa-whatsapp text-emerald-500 text-sm"></i>
+                                            <span>${escapeHtml(rawPhone)}</span>
+                                        </a>
+                                    ` : '<span class="text-slate-400 text-xs">Tanpa WhatsApp</span>'}
+                                </div>
+
+                                <!-- c. Alamat Lengkap Pengiriman (jika metode antar) -->
+                                ${order.deliveryMethod === 'antar' && order.deliveryAddress && order.deliveryAddress !== '-' ? `
+                                    <div class="text-xs text-slate-600 flex items-start gap-1">
+                                        <i class="fa-solid fa-location-dot text-slate-400 mt-0.5 text-[11px] shrink-0"></i>
+                                        <span>${escapeHtml(order.deliveryAddress)}</span>
+                                    </div>
+                                ` : ''}
+
+                                <!-- d. Keterangan Badge Metode Pengiriman berdampingan dengan Metode Pembayaran -->
+                                <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                    ${deliveryBadge}
+                                    ${paymentBadge}
+                                </div>
+
+                                <!-- e. ID Order (Ketik tebal dengan font mono di bawah badge) -->
+                                <div class="font-mono font-bold text-slate-900 text-xs tracking-wider pt-0.5">${escapeHtml(orderNum)}</div>
+
+                                <!-- f. Keterangan kecil tanggal dan waktu transaksi -->
+                                <div class="text-[11px] text-slate-500 font-medium">${formatDateTimeWIB(order.createdAt || order.date)}</div>
+                            </div>
                         </td>
-                        <td class="p-3">
-                            <div class="flex items-center gap-1">${deliveryBadge} ${paymentBadge}</div>
-                            ${order.ongkir > 0 ? `<div class="text-[10px] text-slate-500 mt-0.5">+ Ongkir: Rp ${order.ongkir.toLocaleString('id-ID')}</div>` : ''}
-                            ${order.notes ? `<div class="text-[10px] text-amber-700 bg-amber-50 px-1 py-0.5 rounded border border-amber-200 mt-1 truncate max-w-[160px]" title="${escapeHtml(order.notes)}"><i class="fa-solid fa-note-sticky text-[9px] mr-0.5"></i>${escapeHtml(order.notes)}</div>` : ''}
+
+                        <!-- TOTAL BELANJA (Murni hanya nominal grand total harga belanja tebal emerald besar) -->
+                        <td class="p-3 text-right align-middle">
+                            <div class="font-extrabold text-emerald-600 text-base sm:text-lg">Rp ${(Number(order.grandTotal) || 0).toLocaleString('id-ID')}</div>
                         </td>
-                        <td class="p-3 text-right">
-                            <div class="font-extrabold text-emerald-600 text-sm">Rp ${order.grandTotal.toLocaleString('id-ID')}</div>
-                            <div class="text-[10px] text-slate-400 truncate max-w-[150px] mt-0.5 text-right" title="${escapeHtml(itemsSummary)}">${escapeHtml(itemsSummary || 'Rincian produk')}</div>
-                        </td>
-                        <td class="p-3 text-center">
+
+                        <!-- STATUS PESANAN -->
+                        <td class="p-3 text-center align-middle">
                             ${statusBadge}
                         </td>
-                        <td class="p-3 text-center">
-                            <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                <button type="button" onclick="viewPaymentProof('${docId}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Lihat Bukti Transfer & Detail Pesanan">
+
+                        <!-- AKSI KASIR (Horizontal single-row flex flex-row nowrap gap-1.5 items-center justify-center) -->
+                        <td class="p-3 text-center align-middle">
+                            <div class="flex flex-row nowrap gap-1.5 items-center justify-center whitespace-nowrap">
+                                <button type="button" onclick="viewPaymentProof('${docId}')" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Lihat Bukti Transfer & Detail Pesanan">
                                     <i class="fa-solid fa-receipt text-[11px]"></i>
                                     <span>Bukti & Detail</span>
                                 </button>
 
                                 ${order.status === 'Pending' ? `
-                                    <button type="button" onclick="acceptOnlineOrderPayment('${docId}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shadow-xs" title="Terima & Verifikasi (Potong Stok Otomatis)">
+                                    <button type="button" onclick="acceptOnlineOrderPayment('${docId}')" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-xs whitespace-nowrap" title="Terima & Verifikasi (Potong Stok Otomatis)">
                                         <i class="fa-solid fa-check text-[11px]"></i>
-                                        <span>Terima & Verifikasi</span>
+                                        <span>Terima</span>
                                     </button>
-                                    <button type="button" onclick="rejectOnlineOrder('${docId}')" class="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer" title="Tolak / Batalkan (Kembalikan Stok)">
+                                    <button type="button" onclick="rejectOnlineOrder('${docId}')" class="px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap" title="Tolak / Batalkan">
                                         <i class="fa-solid fa-ban text-[11px]"></i>
-                                        <span>Tolak / Batalkan</span>
+                                        <span>Tolak</span>
                                     </button>
                                 ` : ''}
 
-                                ${order.status === 'Verified' ? `
-                                    <button type="button" onclick="reprintOnlineOrderReceipt('${docId}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shadow-2xs" title="Cetak Ulang Struk Thermal ESC/POS">
-                                        <i class="fa-solid fa-print text-[11px]"></i>
-                                        <span>Cetak Struk</span>
-                                    </button>
-                                ` : ''}
+                                <button type="button" onclick="reprintOnlineOrderReceipt('${docId}')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold transition flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs whitespace-nowrap" title="Cetak Struk Thermal ESC/POS">
+                                    <i class="fa-solid fa-print text-[11px]"></i>
+                                    <span>Cetak Struk</span>
+                                </button>
+
+                                <button type="button" onclick="deleteSingleOnlineOrder('${docId}')" class="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold transition flex items-center justify-center cursor-pointer shrink-0" title="Hapus Pesanan Ini">
+                                    <i class="fa-solid fa-trash text-xs"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -11086,6 +11256,12 @@
         window.changeOnlineOrdersPageSize = changeOnlineOrdersPageSize;
         window.goToOnlineOrdersPage = goToOnlineOrdersPage;
         window.renderOnlineOrdersTable = renderOnlineOrdersTable;
+        window.openOnlineCustomersUrl = openOnlineCustomersUrl;
+        window.toggleSelectAllOnlineOrders = toggleSelectAllOnlineOrders;
+        window.checkOnlineOrdersSelection = checkOnlineOrdersSelection;
+        window.deleteSelectedOnlineOrders = deleteSelectedOnlineOrders;
+        window.deleteSingleOnlineOrder = deleteSingleOnlineOrder;
+        window.formatDateTimeWIB = formatDateTimeWIB;
 
     </script>
 </body>
